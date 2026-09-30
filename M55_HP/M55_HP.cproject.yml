@@ -6,10 +6,8 @@ project:
     - group: Source Files
       files:
         - file: ./main.c
-        - file: ./tetris.c
-        - file: ./tetris.h
-        - file: ./tetris_ui.c
-        - file: ./tetris_ui.h
+        - file: ./matrix.c
+        - file: ./matrix.h
         - file: ./app_utils.h
 
   # List components to use for your application.

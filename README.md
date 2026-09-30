@@ -1,43 +1,26 @@
-﻿# Tetris for Alif DevKit-E8
+﻿# Matrix digital rain - Alif DevKit-E8
 
-A joystick-controlled falling-block game on the standard 480 x 800 ILI9806E LCD, running on the Cortex-M55 HP core. It replaces the rotating square demo.
+An automatic Matrix-style screensaver for the standard 480 x 800 ILI9806E LCD. Green code streams fall over a black background, with pale green leading characters, fading trails, and subtle glyph glow. No joystick input or start button is required.
 
-## Play
-
-Press the joystick center to start.
-
-| Control | Action |
-| --- | --- |
-| Left / right | Move; hold to repeat |
-| Up | Rotate clockwise, once per press |
-| Down | Soft drop; hold to repeat |
-| Short center press and release | Hard drop |
-| Hold center for 600 ms | Pause / resume |
-| Center while paused | Resume |
-| Center after game over | Restart |
-
-The outlined piece shows the landing position. The sidebar shows score, level, cleared lines, next piece, and best score for the current powered session.
-
-Seven tetrominoes are shuffled in bags of seven. The well has 10 columns and 20 visible rows, with two hidden spawn rows. Rotation tries small wall/floor adjustments. A grounded piece locks after 400 ms; up to 12 successful movement/rotation adjustments can reset that delay. Line clears award 100 / 300 / 500 / 800 points times the current level. Soft drops award one point per cell and hard drops two. Every ten cleared lines raises the level and fall speed. Best score is kept in RAM across restarts, not across power cycles.
+The screen has 30 columns of 16-pixel cells. Two layers of independently timed streams create depth: brighter, faster foreground rain and dimmer background rain. Each stream has a randomized speed, length, brightness, and restart delay. Symbols change as the heads pass and occasionally flicker within trails. The original bitmap alphabet combines digits and abstract angular symbols, some mirrored.
 
 ## Build and run
 
-Open `Blinky.csolution.yml` in CMSIS Solution. Select **DevKit-E8@Release**, then **Build** and **Load and Run**. Release retains `-O3 -ffast-math`. The solution's original Blinky name is retained for compatibility. The default target set references `M55_HP.Debug`.
+Open `Blinky.csolution.yml` in CMSIS Solution, select **DevKit-E8@Release**, then **Build** and **Load and Run**. The optimized build retains `-O3 -ffast-math`. The original solution name is kept for compatibility with the existing board configuration.
 
-## Implementation
+## Source
 
-- `M55_HP/tetris.c` and `tetris.h`: hardware-independent game rules and controls.
-- `M55_HP/tetris_ui.c`: RGB565 board, text, next-piece and landing previews.
-- `M55_HP/main.c`: Alif LCD initialization, joystick GPIO, 20 ms debounce, and double buffering.
+- `M55_HP/matrix.c` and `matrix.h`: portable rain state, timing, glyphs, and RGB565 renderer.
+- `M55_HP/main.c`: LCD/clock initialization, animation loop, cache maintenance, and vertical-blank frame swaps.
 
-Joystick mapping follows Ensemble 2.2.1 `Boards/DevKit-e8/Drivers/vio_DevKit-E8.c`: GPIO15 pin 0 = left, pin 1 = up, pin 2 = down, pin 3 = right, pin 4 = center. Switches are active low with pull-ups. Only joystick pins are configured; the LCD reset on GPIO15 pin 5 is left to the panel driver.
+The previous game source, tests, menus, scores, and joystick polling have been removed. GPIO support remains because the LCD driver uses it for reset and backlight.
 
-The LCD uses two frame buffers totaling 1,536,000 bytes in SRAM0. Cache cleaning and vertical-blank swaps prevent stale frames and tearing. Inputs and game timers are serviced every 5 ms while waiting for display refresh. Rendering targets approximately 30 FPS.
+The existing two frame buffers occupy 1,536,000 bytes in SRAM0. Animation timing uses elapsed milliseconds and retains fractional stream movement; rendering targets approximately 30 FPS. Each frame is redrawn from animation state, so alternating buffers never retain stale trails. Long pauses are capped to 250 ms of animation catch-up.
 
-For live inspection, `app_stage = 8` indicates the main loop, `app_error` and `display_events` should be zero, and `frames_presented` should advance. `joystick_raw` and `joystick_keys` use bits 0 through 4 for left, right, up, down, center. `game` contains the board, active piece, score, and state.
+Live inspection: `app_stage = 8` indicates the animation loop. `app_error`, `app_service_error`, and `display_events` should remain zero; `frames_presented`, `rain.updates`, and eventually `rain.respawns` should advance.
 
 ## Host checks
 
-With a native Clang toolchain installed, run `./tests/run_tests.ps1` from the solution directory. The tests cover all piece rotations, seven-bag distribution, wall/floor kicks, collision, line compaction/scoring, lock delay, input repeat, pause/resume, restart, timer wrap, and 50,000 simulated input updates. They also render ready, gameplay, and game-over previews into `out/tetris-*.ppm` with buffer guard checks. These checks do not replace a physical joystick test.
+Run `./tests/run_tests.ps1` with native Clang installed. Tests cover deterministic initialization, changing frames, fractional timing, timer wrap, 20,000 animation updates, stream recycling, glyph indices, green color bounds, and framebuffer guards. Preview images are written as `out/matrix-initial.ppm` and `out/matrix-rain.ppm`.
 
-Validation: Release build and host checks pass. Live board inspection confirmed the render loop with no LCD/service errors; joystick start, movement, rotation, and soft drop were confirmed on the physical board.
+Validation: Release build and host checks pass. Live board inspection confirmed 560 presented frames, 115 recycled streams, and zero LCD/service errors. The screensaver is left running.
