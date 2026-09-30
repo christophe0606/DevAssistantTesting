@@ -1,0 +1,211 @@
+/* Copyright (C) 2023 Alif Semiconductor - All Rights Reserved.
+ * Use, distribution and modification permitted under the Alif Semiconductor
+ * Software License Agreement: https://alifsemi.com/license
+ * Joystick Tetris for the DevKit-E8 standard MIPI LCD.
+ */
+#include "tetris_ui.h"
+#include <stdint.h>
+#include <RTE_Components.h>
+#include CMSIS_device_header
+#include "RTE_Device.h"
+#include "Driver_CDC200.h"
+#include "Driver_IO.h"
+#include "pinconf.h"
+#include "board_config.h"
+#include "se_services_port.h"
+
+#define LCD_WIDTH       RTE_PANEL_HACTIVE_TIME
+#define LCD_HEIGHT      RTE_PANEL_VACTIVE_LINE
+#define FRAME_MS 33U
+
+#if RTE_CDC200_PIXEL_FORMAT != 2
+#error "This renderer requires RGB565 (RTE_CDC200_PIXEL_FORMAT = 2)"
+#endif
+_Static_assert(LCD_WIDTH == GAME_LCD_WIDTH && LCD_HEIGHT == GAME_LCD_HEIGHT,
+               "Tetris UI requires the standard 480 x 800 LCD");
+
+/* Bulk SRAM is accessible to CDC DMA; DTCM holds normal data and stack. */
+static uint16_t framebuffers[2][LCD_HEIGHT][LCD_WIDTH]
+    __attribute__((section(".bss.lcd_frame_buf"), aligned(32)));
+extern ARM_DRIVER_CDC200 Driver_CDC200;
+static volatile uint32_t ms_ticks;
+static volatile uint32_t scanline_count;
+static volatile uint32_t display_events;
+
+/* Retained failure state, inspectable without serial I/O. */
+volatile uint32_t app_stage;
+volatile int32_t app_error;
+volatile uint32_t app_service_error;
+volatile uint32_t frames_presented;
+
+void SysTick_Handler(void)
+{
+    ++ms_ticks;
+}
+
+static void display_callback(uint32_t events)
+{
+    if (events & ARM_CDC_SCANLINE0_EVENT) {
+        ++scanline_count;
+    }
+    display_events |= events & ARM_CDC_DSI_ERROR_EVENT;
+}
+
+static void fail(int32_t error)
+{
+    app_error = error;
+    for (;;) {
+        __WFI();
+    }
+}
+
+static void check_driver(int32_t status)
+{
+    if (status != ARM_DRIVER_OK) {
+        fail(status);
+    }
+}
+
+static void check_service(uint32_t status, uint32_t service_error)
+{
+    app_service_error = service_error;
+    if (status != SERVICES_REQ_SUCCESS || service_error != 0U) {
+        fail(status != SERVICES_REQ_SUCCESS ? (int32_t)status : ARM_DRIVER_ERROR);
+    }
+}
+
+static void clean_frame(uint32_t index)
+{
+    SCB_CleanDCache_by_Addr((uint32_t *)framebuffers[index], sizeof(framebuffers[index]));
+    __DSB();
+}
+
+/* E8 mapping from the pack's vio_DevKit-E8.c: A=left, D=right,
+ * B=up, C=down. All switches are active low on GPIO15. */
+extern ARM_DRIVER_GPIO Driver_GPIO15;
+static const uint8_t joystick_pins[5] = {
+    BOARD_JOY_SW_A_GPIO_PIN, BOARD_JOY_SW_D_GPIO_PIN,
+    BOARD_JOY_SW_B_GPIO_PIN, BOARD_JOY_SW_C_GPIO_PIN,
+    BOARD_JOY_SW_CENTER_GPIO_PIN
+};
+Tetris game;
+volatile uint32_t joystick_raw;
+volatile uint32_t joystick_keys;
+static uint32_t input_at, candidate_at, candidate_keys;
+
+static void joystick_init(void)
+{
+    for (unsigned i = 0; i < 5; ++i) {
+        uint8_t pin = joystick_pins[i];
+        check_driver(pinconf_set(PORT_15, pin, PINMUX_ALTERNATE_FUNCTION_0,
+            PADCTRL_READ_ENABLE | PADCTRL_SCHMITT_TRIGGER_ENABLE |
+            PADCTRL_DRIVER_DISABLED_PULL_UP | PADCTRL_OUTPUT_DRIVE_STRENGTH_4MA));
+        check_driver(Driver_GPIO15.Initialize(pin, NULL));
+        check_driver(Driver_GPIO15.PowerControl(pin, ARM_POWER_FULL));
+        check_driver(Driver_GPIO15.SetDirection(pin, GPIO_PIN_DIRECTION_INPUT));
+    }
+}
+
+static void service_input(void)
+{
+    uint32_t now = ms_ticks;
+    if (now - input_at < 5U) return;
+    input_at = now;
+    uint32_t raw = 0;
+    for (unsigned i = 0; i < 5; ++i) {
+        uint32_t value;
+        check_driver(Driver_GPIO15.GetValue(joystick_pins[i], &value));
+        if (value == 0U) raw |= 1U << i;
+    }
+    joystick_raw = raw;
+    if (raw != candidate_keys) { candidate_keys = raw; candidate_at = now; }
+    if (now - candidate_at >= 20U) joystick_keys = candidate_keys;
+    tetris_update(&game, now, joystick_keys);
+}
+static void present(uint32_t index)
+{
+    check_driver(Driver_CDC200.Control(CDC200_FRAMEBUF_UPDATE_VSYNC,
+                                      (uint32_t)framebuffers[index]));
+    const uint32_t first_scanline = scanline_count;
+    const uint32_t started = ms_ticks;
+    /* The pack reports the line at the end of active video. Wait for TWO
+     * such events so vertical-blank reload has completed before reusing
+     * the old front buffer, even when submitted right at blanking. */
+    while ((uint32_t)(scanline_count - first_scanline) < 2U) {
+        if (display_events != 0U || (uint32_t)(ms_ticks - started) > 250U) {
+            fail(ARM_DRIVER_ERROR_TIMEOUT);
+        }
+        service_input();
+        __WFI();
+    }
+    ++frames_presented;
+}
+
+int main(void)
+{
+    uint32_t service_error = 0U;
+    uint32_t status;
+    run_profile_t profile = {0};
+
+    app_stage = 1U;
+    if (SysTick_Config(SystemCoreClock / 1000U) != 0U) {
+        fail(ARM_DRIVER_ERROR);
+    }
+#if BOARD_CONFIGURE_LVDS_MUX
+    check_driver(board_gpios_config());
+#endif
+    se_services_port_init();
+
+    app_stage = 2U;
+    status = SERVICES_clocks_enable_clock(se_services_s_handle, CLKEN_CLK_100M,
+                                         true, &service_error);
+    check_service(status, service_error);
+    status = SERVICES_clocks_enable_clock(se_services_s_handle, CLKEN_HFOSC,
+                                         true, &service_error);
+    check_service(status, service_error);
+    status = SERVICES_get_run_cfg(se_services_s_handle, &profile, &service_error);
+    check_service(status, service_error);
+    /* Preserve existing power requests while adding display resources. */
+    profile.memory_blocks |= MRAM_MASK | SRAM0_MASK;
+    profile.phy_pwr_gating |= MIPI_PLL_DPHY_MASK | MIPI_TX_DPHY_MASK |
+                             MIPI_RX_DPHY_MASK | LDO_PHY_MASK;
+    status = SERVICES_set_run_cfg(se_services_s_handle, &profile, &service_error);
+    check_service(status, service_error);
+
+    app_stage = 3U;
+    joystick_init();
+    tetris_init(&game, ms_ticks ^ 0xA11FE8U);
+    for (uint32_t i = 0; i < 2U; ++i) {
+        tetris_render(&framebuffers[i][0][0], &game);
+        clean_frame(i);
+    }
+    app_stage = 4U;
+    check_driver(Driver_CDC200.Initialize(display_callback));
+    app_stage = 5U;
+    check_driver(Driver_CDC200.PowerControl(ARM_POWER_FULL));
+    app_stage = 6U;
+    check_driver(Driver_CDC200.Control(CDC200_CONFIGURE_DISPLAY,
+                                      (uint32_t)framebuffers[0]));
+    check_driver(Driver_CDC200.Control(CDC200_SCANLINE0_EVENT, 1U));
+    app_stage = 7U;
+    check_driver(Driver_CDC200.Start());
+
+    app_stage = 8U;
+    uint32_t back = 1U;
+
+    for (;;) {
+        const uint32_t frame_start = ms_ticks;
+        if (display_events != 0U) {
+            fail(ARM_DRIVER_ERROR);
+        }
+        service_input();
+        tetris_render(&framebuffers[back][0][0], &game);
+        clean_frame(back);
+        present(back);
+        back ^= 1U;
+        while ((uint32_t)(ms_ticks - frame_start) < FRAME_MS) {
+            service_input();
+            __WFI();
+        }
+    }
+}

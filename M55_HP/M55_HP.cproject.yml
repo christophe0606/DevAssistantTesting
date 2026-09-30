@@ -1,0 +1,39 @@
+# A project translates into one executable or library.
+project:
+  device: :M55_HP
+
+  groups:
+    - group: Source Files
+      files:
+        - file: ./main.c
+        - file: ./tetris.c
+        - file: ./tetris.h
+        - file: ./tetris_ui.c
+        - file: ./tetris_ui.h
+        - file: ./app_utils.h
+
+  # List components to use for your application.
+  # A software component is a re-usable unit that may be configurable.
+  components:
+    - component: Device:SOC Peripherals:GPIO
+    - component: Device:SOC Peripherals:CDC
+    - component: Device:SOC Peripherals:MIPI DSI
+    - component: Device:SOC Peripherals:MIPI DSI CSI2 DPHY
+    - component: BSP:External peripherals:ILI9806E LCD panel
+    - component: CMSIS:CORE
+    - component: Device:SOC Peripherals:PINCONF
+    - component: Device:Startup
+    - component: BSP:DevKit Config&DevKit-e8
+    - component: BSP:Board Config
+    - component: Services:Secure Enclave:Initialization Helper&Source
+    - component: Services:Secure Enclave:core&Source
+    - component: Device:SOC Peripherals:MHU
+    - component: CMSIS-Compiler:CORE
+
+  # List executable file formats to be generated.
+  output:
+    type:
+      - elf
+      - bin
+      - hex
+      - map
