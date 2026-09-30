@@ -1,9 +1,9 @@
 /* Copyright (C) 2023 Alif Semiconductor - All Rights Reserved.
  * Use, distribution and modification permitted under the Alif Semiconductor
  * Software License Agreement: https://alifsemi.com/license
- * Matrix digital rain for the DevKit-E8 standard MIPI LCD.
+ * Star Wars perspective crawl for the DevKit-E8 standard MIPI LCD.
  */
-#include "matrix.h"
+#include "starwars.h"
 #include <stdint.h>
 #include <RTE_Components.h>
 #include CMSIS_device_header
@@ -19,8 +19,8 @@
 #if RTE_CDC200_PIXEL_FORMAT != 2
 #error "This renderer requires RGB565 (RTE_CDC200_PIXEL_FORMAT = 2)"
 #endif
-_Static_assert(LCD_WIDTH == MATRIX_WIDTH && LCD_HEIGHT == MATRIX_HEIGHT,
-               "Matrix renderer requires the standard 480 x 800 LCD");
+_Static_assert(LCD_WIDTH == STARWARS_WIDTH && LCD_HEIGHT == STARWARS_HEIGHT,
+               "Crawl renderer requires the standard 480 x 800 LCD");
 
 /* Bulk SRAM is accessible to CDC DMA; DTCM holds normal data and stack. */
 static uint16_t framebuffers[2][LCD_HEIGHT][LCD_WIDTH]
@@ -78,7 +78,7 @@ static void clean_frame(uint32_t index)
     __DSB();
 }
 
-MatrixRain rain;
+StarWars crawl;
 
 static void present(uint32_t index)
 {
@@ -130,9 +130,11 @@ int main(void)
     check_service(status, service_error);
 
     app_stage = 3U;
-    matrix_init(&rain, ms_ticks ^ 0x4D415452U, ms_ticks);
+    if (!starwars_init(&crawl, NULL, ms_ticks)) {
+        fail(ARM_DRIVER_ERROR_PARAMETER);
+    }
     for (uint32_t i = 0; i < 2U; ++i) {
-        matrix_render(&framebuffers[i][0][0], &rain);
+        starwars_render(&framebuffers[i][0][0], &crawl);
         clean_frame(i);
     }
     app_stage = 4U;
@@ -154,8 +156,8 @@ int main(void)
         if (display_events != 0U) {
             fail(ARM_DRIVER_ERROR);
         }
-        matrix_update(&rain, ms_ticks);
-        matrix_render(&framebuffers[back][0][0], &rain);
+        starwars_update(&crawl, ms_ticks);
+        starwars_render(&framebuffers[back][0][0], &crawl);
         clean_frame(back);
         present(back);
         back ^= 1U;

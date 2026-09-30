@@ -6,8 +6,9 @@ project:
     - group: Source Files
       files:
         - file: ./main.c
-        - file: ./matrix.c
-        - file: ./matrix.h
+        - file: ./starwars.c
+        - file: ./starwars.h
+        - file: ./crawl_text.h
         - file: ./app_utils.h
 
   # List components to use for your application.
