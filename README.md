@@ -1,43 +1,45 @@
-﻿# Tetris for Alif DevKit-E8
+﻿# Arkanoid for Alif DevKit-E8
 
-A joystick-controlled falling-block game on the standard 480 x 800 ILI9806E LCD, running on the Cortex-M55 HP core. It replaces the rotating square demo.
+A joystick-controlled brick-breaker for the standard 480 x 800 ILI9806E LCD, running on the Cortex-M55 HP core. This branch replaces Tetris with Arkanoid.
 
-## Play
-
-Press the joystick center to start.
+## Controls
 
 | Control | Action |
 | --- | --- |
-| Left / right | Move; hold to repeat |
-| Up | Rotate clockwise, once per press |
-| Down | Soft drop; hold to repeat |
-| Short center press and release | Hard drop |
-| Hold center for 600 ms | Pause / resume |
-| Center while paused | Resume |
-| Center after game over | Restart |
+| Left / right | Move the paddle |
+| Down + left / right | Move slowly for precise aiming |
+| Center on the title screen | Start and launch |
+| Center during play | Pause / resume |
+| Center after losing a ball | Launch the next ball |
+| Center after clearing a level | Start the next level |
+| Center after game over | Start a new game |
 
-The outlined piece shows the landing position. The sidebar shows score, level, cleared lines, next piece, and best score for the current powered session.
+You start with three lives. Deflect the ball into the bricks and catch it with the paddle. Hits near the paddle edges send the ball sideways; center hits send it mostly upward. Moving the paddle adds a little spin.
 
-Seven tetrominoes are shuffled in bags of seven. The well has 10 columns and 20 visible rows, with two hidden spawn rows. Rotation tries small wall/floor adjustments. A grounded piece locks after 400 ms; up to 12 successful movement/rotation adjustments can reset that delay. Line clears award 100 / 300 / 500 / 800 points times the current level. Soft drops award one point per cell and hard drops two. Every ten cleared lines raises the level and fall speed. Best score is kept in RAM across restarts, not across power cycles.
+Bricks with two white studs take two hits. Higher rows award more points; clearing a level earns a bonus and advances to a faster wall. Every seventh destroyed brick can release a teal W capsule: catch it to widen the paddle for 12 seconds. Its duration bar appears below the paddle. Pause freezes the game and the power-up timer.
+
+Score, level, and remaining lives appear above the arena. Best score persists across restarts in RAM, but resets when firmware is reloaded or power is removed.
 
 ## Build and run
 
-Open `Blinky.csolution.yml` in CMSIS Solution. Select **DevKit-E8@Release**, then **Build** and **Load and Run**. Release retains `-O3 -ffast-math`. The solution's original Blinky name is retained for compatibility. The default target set references `M55_HP.Debug`.
+Open `Blinky.csolution.yml` in CMSIS Solution, select **DevKit-E8@Release**, then **Build** and **Load and Run**. Release keeps `-O3 -ffast-math`. The default target set references the Debug configuration. The solution's original Blinky name remains for compatibility with the board setup.
 
 ## Implementation
 
-- `M55_HP/tetris.c` and `tetris.h`: hardware-independent game rules and controls.
-- `M55_HP/tetris_ui.c`: RGB565 board, text, next-piece and landing previews.
-- `M55_HP/main.c`: Alif LCD initialization, joystick GPIO, 20 ms debounce, and double buffering.
+- `M55_HP/arkanoid.c` and `arkanoid.h`: portable game state, controls, and physics.
+- `M55_HP/arkanoid_ui.c` and `arkanoid_ui.h`: RGB565 graphics, text, brick armor, ball trail, paddle, and overlays.
+- `M55_HP/main.c`: existing LCD initialization, joystick GPIO/debounce, cache maintenance, and vertical-blank frame swaps.
 
-Joystick mapping follows Ensemble 2.2.1 `Boards/DevKit-e8/Drivers/vio_DevKit-E8.c`: GPIO15 pin 0 = left, pin 1 = up, pin 2 = down, pin 3 = right, pin 4 = center. Switches are active low with pull-ups. Only joystick pins are configured; the LCD reset on GPIO15 pin 5 is left to the panel driver.
+Physics advances in fixed 5 ms steps independently of LCD rendering. Swept collision checks find the earliest contact with bricks, walls, or the paddle, avoiding tunneling through thin bricks. Brick corners use a rectangular ball envelope for forgiving arcade collisions. Long execution stalls are capped at 100 ms of simulation time.
 
-The LCD uses two frame buffers totaling 1,536,000 bytes in SRAM0. Cache cleaning and vertical-blank swaps prevent stale frames and tearing. Inputs and game timers are serviced every 5 ms while waiting for display refresh. Rendering targets approximately 30 FPS.
+Joystick mapping follows the Alif Ensemble 2.2.1 E8 board driver: GPIO15 pin 0 = left, 1 = up, 2 = down, 3 = right, 4 = center. Inputs are active low, sampled every 5 ms and debounced for 20 ms. Up is unused in this game.
 
-For live inspection, `app_stage = 8` indicates the main loop, `app_error` and `display_events` should be zero, and `frames_presented` should advance. `joystick_raw` and `joystick_keys` use bits 0 through 4 for left, right, up, down, center. `game` contains the board, active piece, score, and state.
+Two RGB565 buffers occupy 1,536,000 bytes in SRAM0. The renderer targets approximately 30 FPS; the game continues servicing input and physics while waiting for the display.
 
-## Host checks
+For live inspection, `app_stage = 8` means the main loop; `app_error`, `app_service_error`, and `display_events` should be zero. `frames_presented` advances. `game` holds the ball, paddle, bricks, score, lives, and state. Joystick bits 0 through 4 are left, right, up, down, center.
 
-With a native Clang toolchain installed, run `./tests/run_tests.ps1` from the solution directory. The tests cover all piece rotations, seven-bag distribution, wall/floor kicks, collision, line compaction/scoring, lock delay, input repeat, pause/resume, restart, timer wrap, and 50,000 simulated input updates. They also render ready, gameplay, and game-over previews into `out/tetris-*.ppm` with buffer guard checks. These checks do not replace a physical joystick test.
+## Host verification
 
-Validation: Release build and host checks pass. Live board inspection confirmed the render loop with no LCD/service errors; joystick start, movement, rotation, and soft drop were confirmed on the physical board.
+Run `./tests/run_tests.ps1` with native Clang installed. Tests exercise launch/pause, precision movement and bounds, walls, paddle angle, armored bricks, side and high-speed collisions, scoring, level progression, lives/restart, power-up collection/expiry, fixed-step consistency, timer wrap, and 100,000 input updates. Rendering checks buffer guards and writes previews to `out/arkanoid-*.ppm`.
+
+Validation: Release build and host tests pass. Live inspection confirmed the render loop, 48 initial bricks, three lives, and no LCD/service errors. Paddle control and ball/brick bounces were confirmed on the physical board.

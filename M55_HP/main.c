@@ -1,9 +1,9 @@
 /* Copyright (C) 2023 Alif Semiconductor - All Rights Reserved.
  * Use, distribution and modification permitted under the Alif Semiconductor
  * Software License Agreement: https://alifsemi.com/license
- * Joystick Tetris for the DevKit-E8 standard MIPI LCD.
+ * Joystick Arkanoid for the DevKit-E8 standard MIPI LCD.
  */
-#include "tetris_ui.h"
+#include "arkanoid_ui.h"
 #include <stdint.h>
 #include <RTE_Components.h>
 #include CMSIS_device_header
@@ -22,7 +22,7 @@
 #error "This renderer requires RGB565 (RTE_CDC200_PIXEL_FORMAT = 2)"
 #endif
 _Static_assert(LCD_WIDTH == GAME_LCD_WIDTH && LCD_HEIGHT == GAME_LCD_HEIGHT,
-               "Tetris UI requires the standard 480 x 800 LCD");
+               "Arkanoid UI requires the standard 480 x 800 LCD");
 
 /* Bulk SRAM is accessible to CDC DMA; DTCM holds normal data and stack. */
 static uint16_t framebuffers[2][LCD_HEIGHT][LCD_WIDTH]
@@ -88,7 +88,7 @@ static const uint8_t joystick_pins[5] = {
     BOARD_JOY_SW_B_GPIO_PIN, BOARD_JOY_SW_C_GPIO_PIN,
     BOARD_JOY_SW_CENTER_GPIO_PIN
 };
-Tetris game;
+Arkanoid game;
 volatile uint32_t joystick_raw;
 volatile uint32_t joystick_keys;
 static uint32_t input_at, candidate_at, candidate_keys;
@@ -120,7 +120,7 @@ static void service_input(void)
     joystick_raw = raw;
     if (raw != candidate_keys) { candidate_keys = raw; candidate_at = now; }
     if (now - candidate_at >= 20U) joystick_keys = candidate_keys;
-    tetris_update(&game, now, joystick_keys);
+    arkanoid_update(&game, now, joystick_keys);
 }
 static void present(uint32_t index)
 {
@@ -174,9 +174,9 @@ int main(void)
 
     app_stage = 3U;
     joystick_init();
-    tetris_init(&game, ms_ticks ^ 0xA11FE8U);
+    arkanoid_init(&game, ms_ticks);
     for (uint32_t i = 0; i < 2U; ++i) {
-        tetris_render(&framebuffers[i][0][0], &game);
+        arkanoid_render(&framebuffers[i][0][0], &game);
         clean_frame(i);
     }
     app_stage = 4U;
@@ -199,7 +199,7 @@ int main(void)
             fail(ARM_DRIVER_ERROR);
         }
         service_input();
-        tetris_render(&framebuffers[back][0][0], &game);
+        arkanoid_render(&framebuffers[back][0][0], &game);
         clean_frame(back);
         present(back);
         back ^= 1U;
