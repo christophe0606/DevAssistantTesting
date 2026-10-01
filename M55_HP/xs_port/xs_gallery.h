@@ -2,9 +2,9 @@
 #define XS_GALLERY_H
 #include <stdint.h>
 #include <stddef.h>
-#define XS_WIDTH 240
-#define XS_HEIGHT 400
-#define XS_DURATION_MS 10000U
+#define XS_WIDTH 400
+#define XS_HEIGHT 240
+#define XS_DURATION_MS 30000U
 #define XS_ARENA0_BYTES (2U * 1024U * 1024U)
 #define XS_ARENA1_BYTES (4U * 1024U * 1024U)
 #define XS_ARENA_BYTES (XS_ARENA0_BYTES + XS_ARENA1_BYTES)

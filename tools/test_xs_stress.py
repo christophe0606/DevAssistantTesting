@@ -9,8 +9,13 @@ args = sys.argv[1:]
 if len(args) < 2:
     raise SystemExit('usage: test_xs_stress.py LOG_NAME HOST_ARGUMENTS...')
 label, *command = args
-result = subprocess.run([str(out/'native/xs_host.exe'), *command], cwd=root,
-                        capture_output=True)
+try:
+    result = subprocess.run([str(out/'native/xs_host.exe'), *command], cwd=root,
+                            capture_output=True, timeout=300)
+except subprocess.TimeoutExpired as error:
+    (out/f'{label}.log').write_bytes(error.stdout or b'')
+    (out/f'{label}-stderr.log').write_bytes(error.stderr or b'')
+    raise SystemExit(f'{label}: timed out after 300 seconds')
 (out/f'{label}.log').write_bytes(result.stdout)
 (out/f'{label}-stderr.log').write_bytes(result.stderr)
 print(f'{label}: exit={result.returncode} records={len(result.stdout.splitlines())}', flush=True)

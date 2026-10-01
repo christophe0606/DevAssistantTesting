@@ -1,0 +1,125 @@
+{
+  "updated_utc": "2026-10-01 14:30:17 UTC",
+  "build": "b-9",
+  "load_debug": "d-10",
+  "final_run": "r-11",
+  "configuration": {
+    "entries": 146,
+    "visible_slot_ms": 30000,
+    "logical_width": 400,
+    "logical_height": 240,
+    "physical_lcd_width": 480,
+    "physical_lcd_height": 800,
+    "rotation_degrees_clockwise": 90,
+    "scale": 2
+  },
+  "host_display_checks": {
+    "passed": true,
+    "cases": [
+      "all rotated quadrant pixels",
+      "2x scaling",
+      "LCD buffer guards",
+      "30000 ms boundary",
+      "delayed first presentation",
+      "32-bit timer rollover"
+    ],
+    "log": "out/xscreensaver-port/display-landscape-30s.log"
+  },
+  "host_savers": [
+    {
+      "index": 62,
+      "code": 0,
+      "output": "phosphor varied_pixels=26453 peak_bytes=276640",
+      "error": ""
+    },
+    {
+      "index": 81,
+      "code": 0,
+      "output": "polyominoes varied_pixels=7609 peak_bytes=583648",
+      "error": ""
+    },
+    {
+      "index": 97,
+      "code": 0,
+      "output": "pacman varied_pixels=3737 peak_bytes=2155520",
+      "error": ""
+    }
+  ],
+  "board_savers": [
+    {
+      "index": 62,
+      "name": "phosphor",
+      "build": "b-9",
+      "passed": true,
+      "elapsed_ms": 3985,
+      "frames": 121,
+      "peak_bytes": 263248,
+      "fault_status": {
+        "HFSR": 0,
+        "MMFSR": 0,
+        "BFSR": 0,
+        "UFSR": 0
+      },
+      "utc": "2026-10-01 14:26:03 UTC"
+    },
+    {
+      "index": 81,
+      "name": "polyominoes",
+      "build": "b-9",
+      "passed": true,
+      "elapsed_ms": 6063,
+      "frames": 181,
+      "peak_bytes": 49216,
+      "fault_status": {
+        "HFSR": 0,
+        "MMFSR": 0,
+        "BFSR": 0,
+        "UFSR": 0
+      },
+      "utc": "2026-10-01 14:26:11 UTC"
+    },
+    {
+      "index": 97,
+      "name": "pacman",
+      "build": "b-9",
+      "passed": true,
+      "elapsed_ms": 6843,
+      "frames": 207,
+      "peak_bytes": 2142512,
+      "fault_status": {
+        "HFSR": 0,
+        "MMFSR": 0,
+        "BFSR": 0,
+        "UFSR": 0
+      },
+      "utc": "2026-10-01 14:26:20 UTC"
+    }
+  ],
+  "board_transition": {
+    "from": 97,
+    "to": 98,
+    "elapsed_since_first_presentation_ms": 48318,
+    "first_presentations_apart_ms": 30084,
+    "frames": 978,
+    "fault_status": {
+      "HFSR": 0,
+      "MMFSR": 0,
+      "BFSR": 0,
+      "UFSR": 0
+    },
+    "passed": true,
+    "utc": "2026-10-01 14:27:03 UTC"
+  },
+  "full_gallery_retest": false,
+  "reason": "User explicitly requested focused checks and final Release without repeating the full gallery tests.",
+  "hardware_state": {
+    "cmsis_run_active": true,
+    "debugger_detached": true,
+    "breakpoints_cleared": true,
+    "cycling_enabled": true
+  },
+  "limitations": [
+    "Historical portrait stress evidence is retained separately.",
+    "Focused layout checks do not establish every saver/random state or distinct animation-frame rate."
+  ]
+}

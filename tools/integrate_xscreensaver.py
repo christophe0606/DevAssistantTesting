@@ -22,7 +22,7 @@ p=root/'M55_HP/main.c'
 s=p.read_text()
 s=s.replace(' * Joystick Pac-Man for the DevKit-E8 standard MIPI LCD.',' * CPU XScreenSaver gallery for the DevKit-E8 standard MIPI LCD.')
 s=s.replace('#include "pacman.h"','#include "xs_port/xs_gallery.h"')
-s=s.replace('LCD_WIDTH == GAME_LCD_WIDTH && LCD_HEIGHT == GAME_LCD_HEIGHT','LCD_WIDTH == XS_WIDTH * 2 && LCD_HEIGHT == XS_HEIGHT * 2').replace('"Pac-Man UI requires the standard 480 x 800 LCD"','"The gallery requires the standard 480 x 800 LCD"')
+s=s.replace('LCD_WIDTH == GAME_LCD_WIDTH && LCD_HEIGHT == GAME_LCD_HEIGHT','LCD_WIDTH == XS_HEIGHT * 2 && LCD_HEIGHT == XS_WIDTH * 2').replace('"Pac-Man UI requires the standard 480 x 800 LCD"','"The gallery requires the standard 480 x 800 LCD"')
 s=re.sub(r'/\* E8 mapping.*?(?=static void present)', '',s,flags=re.S)
 s=s.replace('        service_input();\n','')
 s=s.replace('    joystick_init();\n    pacman_init(&game, ms_ticks);','    xs_gallery_init(ms_ticks);')

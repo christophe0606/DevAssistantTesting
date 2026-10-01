@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-01 13:57:04 UTC",
+  "updated_utc": "2026-10-01 14:24:18 UTC",
   "host": {
     "generator": {
       "records": 12288,
@@ -246,9 +246,597 @@
         "next_frame": 136838,
         "started": 133457,
         "xs_memory_peak": 85136
+      },
+      {
+        "utc": "2026-10-01 13:57:09 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 184832,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 4959,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 11,
+        "next_frame": 184851,
+        "started": 184133,
+        "xs_memory_peak": 25808
+      },
+      {
+        "utc": "2026-10-01 13:58:19 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 254268,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 6837,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 17,
+        "next_frame": 254254,
+        "started": 244724,
+        "xs_memory_peak": 101280
+      },
+      {
+        "utc": "2026-10-01 13:59:02 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 295564,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 8070,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 22,
+        "next_frame": 295547,
+        "started": 295384,
+        "xs_memory_peak": 8560
+      },
+      {
+        "utc": "2026-10-01 13:59:48 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 341242,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 9429,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 26,
+        "next_frame": 341249,
+        "started": 336299,
+        "xs_memory_peak": 2992
+      },
+      {
+        "utc": "2026-10-01 14:01:02 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 414385,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 11240,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 33,
+        "next_frame": 414391,
+        "started": 407153,
+        "xs_memory_peak": 6224
+      },
+      {
+        "utc": "2026-10-01 14:01:53 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 465225,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 12542,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 38,
+        "next_frame": 465235,
+        "started": 457669,
+        "xs_memory_peak": 325680
+      },
+      {
+        "utc": "2026-10-01 14:02:46 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 515800,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 13586,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 43,
+        "next_frame": 515678,
+        "started": 510820,
+        "xs_memory_peak": 110320
+      },
+      {
+        "utc": "2026-10-01 14:03:38 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 567121,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 14697,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 48,
+        "next_frame": 567128,
+        "started": 561497,
+        "xs_memory_peak": 138064
+      },
+      {
+        "utc": "2026-10-01 14:04:28 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 617192,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 15888,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 53,
+        "next_frame": 617211,
+        "started": 612455,
+        "xs_memory_peak": 9520
+      },
+      {
+        "utc": "2026-10-01 14:05:18 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 666775,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 17091,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 58,
+        "next_frame": 666767,
+        "started": 662952,
+        "xs_memory_peak": 387488
+      },
+      {
+        "utc": "2026-10-01 14:06:09 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 716690,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 18263,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 62,
+        "next_frame": 716085,
+        "started": 706054,
+        "xs_memory_peak": 263328
+      },
+      {
+        "utc": "2026-10-01 14:07:00 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 766679,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 19595,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 67,
+        "next_frame": 766640,
+        "started": 757756,
+        "xs_memory_peak": 2256
+      },
+      {
+        "utc": "2026-10-01 14:07:51 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 816448,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 20753,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 72,
+        "next_frame": 816433,
+        "started": 808226,
+        "xs_memory_peak": 68336
+      },
+      {
+        "utc": "2026-10-01 14:08:43 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 866604,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 21881,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 77,
+        "next_frame": 866603,
+        "started": 858734,
+        "xs_memory_peak": 339296
+      },
+      {
+        "utc": "2026-10-01 14:09:34 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 917480,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 22932,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 82,
+        "next_frame": 917393,
+        "started": 909321,
+        "xs_memory_peak": 11104
+      },
+      {
+        "utc": "2026-10-01 14:10:26 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 967680,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 23723,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 87,
+        "next_frame": 967655,
+        "started": 959931,
+        "xs_memory_peak": 2256
+      },
+      {
+        "utc": "2026-10-01 14:11:16 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 1017315,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 24650,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 92,
+        "next_frame": 1017133,
+        "started": 1010749,
+        "xs_memory_peak": 1728768
+      },
+      {
+        "utc": "2026-10-01 14:12:07 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 1067153,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 25244,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 97,
+        "next_frame": 1067156,
+        "started": 1062448,
+        "xs_memory_peak": 2920560
+      },
+      {
+        "utc": "2026-10-01 14:13:00 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 1118934,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 26524,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 102,
+        "next_frame": 1118913,
+        "started": 1112938,
+        "xs_memory_peak": 145840
+      },
+      {
+        "utc": "2026-10-01 14:13:51 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 1169203,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 27247,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 107,
+        "next_frame": 1169154,
+        "started": 1164720,
+        "xs_memory_peak": 21696
+      },
+      {
+        "utc": "2026-10-01 14:14:43 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 1220244,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 28271,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 112,
+        "next_frame": 1220196,
+        "started": 1215472,
+        "xs_memory_peak": 20608
+      },
+      {
+        "utc": "2026-10-01 14:15:33 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 1270046,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 28729,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 117,
+        "next_frame": 1270027,
+        "started": 1266645,
+        "xs_memory_peak": 179744
+      },
+      {
+        "utc": "2026-10-01 14:16:25 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 1321567,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 29524,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 122,
+        "next_frame": 1321571,
+        "started": 1317608,
+        "xs_memory_peak": 82224
+      },
+      {
+        "utc": "2026-10-01 14:17:16 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 1371610,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 30692,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 127,
+        "next_frame": 1371579,
+        "started": 1368103,
+        "xs_memory_peak": 1152
+      },
+      {
+        "utc": "2026-10-01 14:18:30 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 1416250,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 31809,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 131,
+        "next_frame": 1416261,
+        "started": 1408487,
+        "xs_memory_peak": 7616
+      },
+      {
+        "utc": "2026-10-01 14:19:23 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 1469044,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 33159,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 136,
+        "next_frame": 1469015,
+        "started": 1459148,
+        "xs_memory_peak": 902208
+      },
+      {
+        "utc": "2026-10-01 14:20:23 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 1527970,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 34607,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 142,
+        "next_frame": 1527984,
+        "started": 1520616,
+        "xs_memory_peak": 189360
+      },
+      {
+        "utc": "2026-10-01 14:21:03 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 1567035,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 35784,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 0,
+        "next_frame": 1567032,
+        "started": 1560884,
+        "xs_memory_peak": 752
       }
     ],
-    "transitions": 4,
+    "transitions": 144,
     "passed": false,
     "requested_rotations": 2,
     "first": {
@@ -272,6 +860,11 @@
       "started": 93098,
       "xs_memory_peak": 24384
     },
-    "first_index": 2
+    "first_index": 2,
+    "end_utc": "2026-10-01 14:21:03 UTC",
+    "stopped_for": "User requested 30-second landscape Release; no full gallery retest.",
+    "completed_rotations": 0,
+    "wraparound_observed": true,
+    "outcome": "Stopped at user request to change timing/orientation; no errors or faults observed."
   }
 }

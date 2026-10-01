@@ -18,6 +18,39 @@ extern void ya_rand_init(unsigned seed);
 static uint16_t lcd[480*800+2];
 extern int xs_memory_validate(void);
 static int rotation(void);
+static int display_checks(void){
+  if(XS_WIDTH!=400 || XS_HEIGHT!=240 || XS_DURATION_MS!=30000U)return 15;
+  /* Four colored quadrants verify direction, scaling, edges and LCD stride
+   * without relying on any particular saver image. */
+  for(int y=0;y<XS_HEIGHT;y++)for(int x=0;x<XS_WIDTH;x++)
+    xs_window.pixels[y*XS_WIDTH+x]=y<XS_HEIGHT/2?
+      (x<XS_WIDTH/2?0xffff0000U:0xff00ff00U):
+      (x<XS_WIDTH/2?0xff0000ffU:0xffffffffU);
+  lcd[0]=0x531e;lcd[480*800+1]=0x1234;
+  xs_gallery_render(lcd+1);
+  if(lcd[0]!=0x531e || lcd[480*800+1]!=0x1234)return 16;
+  for(int y=0;y<800;y++)for(int x=0;x<480;x++){
+    uint16_t expected=y<400?(x<240?0x001f:0xf800):(x<240?0xffff:0x07e0);
+    if(lcd[1+y*480+x]!=expected)return 17;
+  }
+  uint32_t now=UINT32_MAX-10000U;
+  xs_cycle_enabled=1;xs_gallery_init(now);
+  now+=XS_DURATION_MS+5000U;xs_gallery_update(now);
+  if(xs_current_saver!=0 || xs_last_error)return 18;
+  xs_gallery_presented(now);
+  xs_gallery_update(now+XS_DURATION_MS-1);
+  if(xs_current_saver!=0 || xs_last_error)return 19;
+  xs_gallery_update(now+XS_DURATION_MS);
+  if(xs_current_saver!=1 || xs_last_error)return 20;
+  now=UINT32_MAX-15000U;
+  xs_gallery_select(xs_gallery_count()-1,now);xs_gallery_presented(now);
+  xs_gallery_update(now+XS_DURATION_MS-1);
+  if(xs_current_saver!=xs_gallery_count()-1 || xs_last_error)return 21;
+  xs_gallery_update(now+XS_DURATION_MS);
+  if(xs_current_saver!=0 || xs_last_error || !xs_memory_validate())return 22;
+  puts("Landscape rotation/scaling/guards and 30-second timing/rollover checks passed");
+  return 0;
+}
 extern int xs_pacman_ghost_path_test(pacmangamestruct *,int,int,unsigned *,unsigned *);
 static int pacman_paths(unsigned count){
   for(unsigned seed=1;seed<=count;seed++){
@@ -114,18 +147,18 @@ static int rotation(void){
   xs_gallery_presented(now);
   for(unsigned slot=0;slot<count*2;slot++){
     unsigned expected=slot%count;
-    for(unsigned elapsed=0;elapsed<10000;elapsed+=33){
+    for(unsigned elapsed=0;elapsed<XS_DURATION_MS;elapsed+=33){
       xs_gallery_update(now+elapsed);
       xs_gallery_presented(now+elapsed);
       if(xs_current_saver!=expected || xs_last_error || !xs_memory_validate()){
         fprintf(stderr,"rotation %u %s: %s\n",slot,xs_gallery_name(expected),xs_error_text);return 5;
       }
     }
-    xs_gallery_update(now+9999);
+    xs_gallery_update(now+XS_DURATION_MS-1);
     if(xs_current_saver!=expected)return 6;
     lcd[480*800]=0x531e;lcd[480*800+1]=0x1234;xs_gallery_render(lcd);
     if(lcd[480*800]!=0x531e||lcd[480*800+1]!=0x1234)return 4;
-    now+=10000;
+    now+=XS_DURATION_MS;
     printf("rotation selecting=%u %s\n",(expected+1)%count,xs_gallery_name((expected+1)%count));fflush(stdout);
     xs_gallery_update(now);
     xs_gallery_presented(now);
@@ -140,6 +173,7 @@ int main(int argc,char **argv){
   SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOGPFAULTERRORBOX);
 #endif
   if(argc<2){printf("%u\n",xs_gallery_count());return 0;}
+  if(!strcmp(argv[1],"--display-checks"))return display_checks();
   if(!strcmp(argv[1],"--rotation"))return rotation();
   if(!strcmp(argv[1],"--pacman-levels"))return pacman_levels(argc>2?strtoul(argv[2],NULL,0):256);
   if(!strcmp(argv[1],"--pacman-paths"))return pacman_paths(argc>2?strtoul(argv[2],NULL,0):256);
@@ -154,7 +188,7 @@ int main(int argc,char **argv){
   unsigned changed=0;size_t peak=0;
   for(unsigned cycle=0;cycle<3;cycle++){
     if(!xs_gallery_select(index,now)){fprintf(stderr,"init: %s\n",xs_error_text);return 1;}
-    for(unsigned i=0;i<300;i++){
+    for(unsigned i=0;i<(XS_DURATION_MS+32)/33;i++){
       xs_gallery_update(now+i*33);
       xs_gallery_presented(now+i*33);
       if(xs_last_error){fprintf(stderr,"draw: %s\n",xs_error_text);return 1;}
@@ -167,7 +201,7 @@ int main(int argc,char **argv){
       if(argc>2){FILE*f=fopen(argv[2],"wb");if(!f)return 3;fprintf(f,"P6\n%d %d\n255\n",XS_WIDTH,XS_HEIGHT);
         for(unsigned i=0;i<XS_WIDTH*XS_HEIGHT;i++){uint32_t p=xs_window.pixels[i];unsigned char rgb[3]={p>>16,p>>8,p};fwrite(rgb,1,3,f);}fclose(f);}
     }
-    now+=10000;
+    now+=XS_DURATION_MS;
   }
   lcd[480*800]=0x531e;lcd[480*800+1]=0x1234;xs_gallery_render(lcd);
   if(lcd[480*800]!=0x531e||lcd[480*800+1]!=0x1234)return 4;

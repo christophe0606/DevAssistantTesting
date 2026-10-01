@@ -1,4 +1,4 @@
-/* One active original module, ten-second slots, and reclaimed memory per slot. */
+/* One active original module, timed slots, and reclaimed memory per slot. */
 #include "xs_internal.h"
 #include "screenhackI.h"
 #include "xlockmoreI.h"
@@ -63,5 +63,9 @@ void xs_gallery_update(uint32_t now){
 }
 void xs_gallery_render(uint16_t *out){for(int y=0;y<XS_HEIGHT;y++)for(int x=0;x<XS_WIDTH;x++){
   uint32_t p=xs_window.pixels[y*XS_WIDTH+x];uint16_t c=((p>>8)&0xf800)|((p>>5)&0x7e0)|((p>>3)&31);
-  size_t pos=(size_t)y*2*XS_WIDTH*2+x*2;out[pos]=out[pos+1]=out[pos+XS_WIDTH*2]=out[pos+XS_WIDTH*2+1]=c;
+  /* Rotate the landscape canvas clockwise into the portrait LCD, then
+   * enlarge each pixel 2x. Physical rows stay 480 pixels wide. */
+  const size_t stride=XS_HEIGHT*2;
+  size_t pos=(size_t)x*2*stride+(XS_HEIGHT-1-y)*2;
+  out[pos]=out[pos+1]=out[pos+stride]=out[pos+stride+1]=c;
 }}

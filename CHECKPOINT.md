@@ -1,4 +1,4 @@
-# XScreenSaver port: runtime stress validation in progress
+# XScreenSaver port: 30-second landscape Release
 
 ## Reopened runtime issue (2026-10-01)
 
@@ -10,7 +10,11 @@ Expanded 64 KiB host rotations found a second stack overflow in Polyominoes' rec
 
 Final native runs passed 876 slots (six full rotations) on a 64 KiB stack across seeds 1, 2 and 1741900050. Release build b-7 and load/debug d-8 succeeded. Ten targeted board cases passed on this image: Polyominoes seeds 1, 2 and 1741900050; Maze seeds 1 and 2; Pacman seeds 1, 2, 3, 5 and 7. All errors/fault flags were clear.
 
-**Sustained natural board cycling is currently running on b-7, with debugger attached and all breakpoints cleared. Two full rotations are still pending.** Do not reset, rebuild or request another saver while measuring this. Use the persisted `xs_monitor_sustained` helper inside functions.exec, or pause/read the status blocks and resume through CMSIS MCP. Samples and final evidence belong in `third_party/xscreensaver/runtime-stress-progress.json`. The current helper tracks progression from observed entry 2, validates presentation/error/fault state, and marks passing only after 292 natural transitions. Refresh the evidence file before yielding or compaction.
+The b-7 portrait run reached the 145-to-0 wrap with advancing presentations and no errors or faults. Its monitoring baseline was entry 2, with 144 observed natural transitions. The user then requested 30-second slots, 90-degree rotation and the final Release, explicitly declining another full gallery test. **The two-rotation campaign is stopped; do not resume it or repeat all individual checks.** Historical samples remain in `third_party/xscreensaver/runtime-stress-progress.json`.
+
+Current Release b-9 uses a 400x240 landscape canvas rotated clockwise into the 480x800 LCD at 2x scale. The timer is 30,000 ms from first presentation. Focused host tests checked every output pixel against four known rotated quadrants, LCD buffer guards, exact slot boundaries, delayed presentation and timer rollover. Phosphor, Polyominoes and Pacman passed focused host and board checks. Pacman-to-FuzzyFlakes first presentations were 30.084 seconds apart, with clear errors and faults. Current evidence belongs in `third_party/xscreensaver/landscape-release-checks.json`. No full gallery tests were repeated after this layout change.
+
+If a long-running functions.exec cell is terminated, reload the evidence JSON from disk before continuing: its intermediate store changes may not reach the next isolate even though file checkpoints were saved. Restore `xs_sustained_final`, `xs_final_targeted_board`, `xs_final_stress_host` and `xs_stress_saved_content` from that file. `tools/resume_board_stress.js` restores helper strings and addresses; read and evaluate inside functions.exec. A monitor interruption at 125 transitions exposed this bookkeeping issue; the valid file checkpoint was recovered, the board remained error/fault-free, and natural cycling resumed without reset.
 
 The completed-check history below predates the runtime fault.
 
@@ -19,8 +23,8 @@ Updated on 2026-10-01. Preserve all historical individual passes; those checks a
 ## Workspace and requested outcome
 
 - Workspace: `C:\Users\chrfav01\benchresults\TEMP\testassistant\Blinky_M55_HP`
-- Branch: `xscreensaver`. No commits have been made; all port changes remain in the working tree.
-- The Cortex-M55 HP on Alif DevKit-E8 runs all 146 CPU/non-OpenGL rotation entries in Release, full screen, with ten seconds starting from the first presented frame.
+- Branch: `xscreensaver`. HEAD includes `2a46470` (Corrected stack issues). This continuation made no commits; the landscape/timing changes remain in the working tree.
+- The Cortex-M55 HP on Alif DevKit-E8 runs all 146 CPU/non-OpenGL rotation entries in Release, full screen, in landscape with 30 seconds starting from the first presented frame.
 - The user approved bundled/local equivalents for photos, text, network input and external programs, and scaled pictures. No saver was excluded for memory.
 - The user's validation strategy was followed: retain successful individual checks and resume at the failing entry after fixes. No delegation was authorized.
 - Precomputed Phosphor glyph bitmaps remain future work in [WORK_TO_DO.md](WORK_TO_DO.md).
@@ -40,11 +44,10 @@ Updated on 2026-10-01. Preserve all historical individual passes; those checks a
 ## Final build and hardware state
 
 - Solution: `Blinky.csolution.yml`; target **DevKit-E8@Release**, context `M55_HP.Release+DevKit-E8`; AC6 6.24, `-O3 -ffast-math`.
-- Current firmware is build **b-7**, including Pacman, Polyominoes and Maze stack fixes and Pacman coordinate bounds. Build IDs are session-local; b-41 below is historical.
+- Current firmware is build **b-9**, including 30-second slots and landscape rendering as well as the Pacman, Polyominoes and Maze stack fixes. Build IDs are session-local; b-7/b-41 evidence is historical.
 - Program: `out/M55_HP/DevKit-E8/Release/M55_HP.axf`; program its combined HEX containing code and assets.
 - Resumed CMSIS window: PID **29888**. Re-discover and pin the window after a VS Code restart.
-- Current load/debug job **d-8** passed. Earlier d-1 / r-2 are historical.
-- **Natural cycling is running under the debugger, all breakpoints cleared, with periodic brief pause/read/resume checkpoints.** After sustained checks, use CMSIS load_and_run and leave the debugger detached.
+- Current load/debug job **d-10** passed; final **load_and_run r-11** passed. **CMSIS Run is active, debugger detached, all breakpoints cleared, normal 30-second cycling enabled.** Focused evidence is saved in `third_party/xscreensaver/landscape-release-checks.json`. Do not stop/reflash merely to repeat historical checks.
 - Do not stop or reflash the running image solely to repeat completed checks.
 
 ## Implementation and memory findings to retain
@@ -52,14 +55,14 @@ Updated on 2026-10-01. Preserve all historical individual passes; those checks a
 - Official pinned XScreenSaver 6.16 sources and notices are under `third_party/xscreensaver`; archive at `out/xscreensaver-port/xscreensaver-6.16.tar.gz`, source URL https://www.jwz.org/xscreensaver/xscreensaver-6.16.tar.gz.
 - Catalog: 121 current CPU C savers, 22 retired CPU savers, Mismunch (Munch variant), and local WebCollage/VidWhacker equivalents. Excludes 172 GL/GPU entries and `testx11`. The old local Pacman demo is removed; upstream autonomous Pacman remains.
 - `M55_HP/xs_port` supplies CPU Xlib/JWXYZ drawing, bounded allocation, resources, fonts, images, local text, lifecycle, scheduling and recovery.
-- A 240x400 ARGB canvas is enlarged 2x to the 480x800 RGB565 LCD. Ordinary pictures are capped at 200x320; required font/sprite atlas dimensions are preserved.
+- A 400x240 ARGB canvas is rotated clockwise by 90 degrees and enlarged 2x into the physical 480x800 RGB565 LCD. Pixel count is unchanged; bundled picture and font/sprite assets retain their existing sizes.
 - Shared assets use a separate MRAM region. Raw BIN export remains disabled: the old single BIN prevented multi-region export and left stale HEX output.
 - Startup requests SRAM0/SRAM1 power through SE services before use, excludes bulk SRAM from startup zeroing, and disables semihosting with local standard-I/O retargets.
 - GCs retain referenced clip/stipple/tile pixmaps, allowing upstream masks to be freed while referenced. This fixed Maze's host crash.
 - Compact asset fields/signatures/masks use volatile byte reads: AC6 O3 unaligned loads in Device-memory MRAM caused BlitSpin and NoseGuy faults.
 - SRAM0 is **0x02000000 / 4 MiB**; SRAM1 is **0x08000000 / 4 MiB**. Live reads rejected 0x02400000. The pack's contiguous map caused Triangle's BusFault. Keep separate linker/MPU regions and 2 MiB + 4 MiB allocator pools; no block or coalescing may cross the gap.
 - Droste input oversampling is 2, reduced from 2.5. Phosphor scale is 2.
-- `xs_gallery_presented(now)` starts the ten-second slot at first presentation; long blocking callbacks can still delay a transition.
+- `xs_gallery_presented(now)` starts the 30-second slot at first presentation; long blocking callbacks can still delay a transition.
 - Budget: SRAM0 4,017,152 / 4,194,304 bytes; SRAM1 4,194,304 / 4,194,304 bytes; total bulk 8,211,456 / 8,388,608 bytes. MRAM assets 1,553,824 / 1,572,864 bytes; stack 64 KiB in DTCM. Allocator peak measures payload usage.
 
 ## Future targeted checks

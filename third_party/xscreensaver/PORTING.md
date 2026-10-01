@@ -7,6 +7,8 @@ The upstream C files, source images, attribution and license notices remain in t
 
 `M55_HP/xs_port` provides resource lookup, deterministic PRNG, a millisecond clock, a bounded allocator, bundled text and image input, a bitmap font, and CPU drawing through the existing JWXYZ function table. There is no X server, window manager, network, filesystem image scanning, subprocess execution, shared-memory extension, or OpenGL renderer. Desktop input and those dependencies are replaced by local behavior where applicable.
 
+All modules receive a 400x240 landscape drawable. The shared renderer rotates it clockwise by 90 degrees and scales it 2x into the physical 480x800 LCD. Slots last 30 seconds from first presentation. The canvas still occupies 384,000 bytes and the LCD buffer sizes are unchanged.
+
 Bulk SRAM uses separate `UNINIT` execution regions at `0x02000000` and `0x08000000`: startup must not clear SRAM1 before the secure-enclave power request in `main`. The allocator links a 2 MiB pool in SRAM0 and a 4 MiB pool in SRAM1 and never coalesces across the bank boundary. The native checks use the same two-pool layout and validate both block chains. The canvas and LCD buffers are fully drawn before display startup, and allocated saver state is explicitly initialized. Read-only assets have their own MRAM load region; combined HEX export is used to program both regions.
 
 `board_io.c` retargets AC6 standard streams to a local sink/EOF and disables semihosting. The original modules can retain their C-library formatting calls without stopping standalone firmware at a debugger I/O trap. C-library assertions are routed through the gallery's recovery path.

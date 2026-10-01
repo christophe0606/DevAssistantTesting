@@ -21,7 +21,7 @@
 #if RTE_CDC200_PIXEL_FORMAT != 2
 #error "This renderer requires RGB565 (RTE_CDC200_PIXEL_FORMAT = 2)"
 #endif
-_Static_assert(LCD_WIDTH == XS_WIDTH * 2 && LCD_HEIGHT == XS_HEIGHT * 2,
+_Static_assert(LCD_WIDTH == XS_HEIGHT * 2 && LCD_HEIGHT == XS_WIDTH * 2,
                "The gallery requires the standard 480 x 800 LCD");
 
 /* Bulk SRAM is accessible to CDC DMA; DTCM holds normal data and stack. */

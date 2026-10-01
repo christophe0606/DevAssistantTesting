@@ -1,12 +1,13 @@
 # XScreenSaver port: future work and board-validation notes
 
-## Active validation: runtime stack fixes and natural rotations
+## Completed runtime fixes and current display configuration
 
 - Normal cycling faulted in recursive creatlevelblock/nextstep; live UFSR=0x0010 confirmed STKOF against the 64 KiB CPU stack. The generator has a 1312-byte local maze snapshot per recursive frame.
 - Pacman generation is fixed with bounded heap backtracking: 768 exact reference matches, 12,288 generations on a 64 KiB host stack, seeded board passes and an automatic transition. No reboot was needed.
 - Expanded small-stack rotations also found Polyominoes' region-walk overflow. Its queue replacement preserves 32 seeded images. Maze's union-find and Pacman's ghost DFS now use iterative walks; 32 Maze/Pacman images and 1,024 ghost path references match. The bounds guard fixes an access violation triggered by a direct test from outside blank cells. 16,384 connected/disconnected path cases pass on a 64 KiB stack.
-- Release b-7 passed ten targeted board checks and six seeded host rotations on a 64 KiB stack. **Two sustained natural board rotations are in progress and still pending.** Record them separately in `third_party/xscreensaver/runtime-stress-progress.json`; preserve the 146 historical individual passes.
-- Finish natural rotations, update the evidence and documentation, clear breakpoints and leave final Release through CMSIS Run with the debugger detached. Do not claim every random state or distinct animation frame has been validated.
+- Release b-7 passed ten targeted board checks and six seeded host rotations on a 64 KiB stack. Natural board cycling reached the last-to-first wrap with no errors or faults. The user stopped the planned two-rotation campaign to change timing and orientation; do not resume it or repeat all 146 checks without a new request. Historical evidence is in `third_party/xscreensaver/runtime-stress-progress.json`.
+- The requested final configuration is 30 seconds per saver, a 400x240 landscape canvas and shared clockwise 90-degree LCD rotation. Release b-9 passed focused display/timing checks and Phosphor, Polyominoes and Pacman host/board checks. A natural Pacman-to-FuzzyFlakes transition had first presentations 30.084 seconds apart. Current evidence is in `third_party/xscreensaver/landscape-release-checks.json`. Do not claim every random state or distinct animation frame has been validated.
+- Final CMSIS load_and_run r-11 passed. The board is running with cycling enabled, breakpoints cleared and the debugger detached; no full gallery retest is pending.
 
 ## Precompute glyph bitmaps before building
 
@@ -24,10 +25,10 @@
 - Results and timing evidence are in `third_party/xscreensaver/board-test-progress.json`; inventory and README reflect this evidence. `CHECKPOINT.md` records the completed state, and `tools/resume_board_tests.js` retains the MCP helpers with all passes loaded.
 - For future targeted checks, use `xs_cycle_enabled = 0` and `xs_requested_saver = index` through the normal main loop. Allow slow initialization to finish before judging animation. Injecting `xs_gallery_select()` previously stalled the debugger at Coral; the requested-index control passed.
 
-## Keep ten seconds of visible display time
+## Keep 30 seconds of visible display time
 
-- `xs_gallery_presented()` starts each slot at its first presented frame. Host and Release board checks passed, including Phosphor's delayed first frame.
-- Keep a host regression for a first frame delayed beyond ten seconds and for timer rollover.
+- `xs_gallery_presented()` starts each slot at its first presented frame. Focused host timing and the 30-second Release board transition passed; the earlier Phosphor first-frame timing remains historical evidence.
+- Keep host regressions for a delayed first presentation, the configured slot boundary and timer rollover.
 - Measure the slowest callbacks. A long blocking draw can still delay the next transition even when the visible slot timer is correct.
 
 ## Memory-map and allocator findings
@@ -48,5 +49,5 @@
 
 - Benchmark each CPU saver on the E8. Excluding OpenGL avoids GPU dependencies but does not guarantee that every CPU algorithm runs smoothly.
 - Tune particle counts, temporary image sizes and font scales where needed, preserving recognizable behavior. Compare board output with the native contact sheet, especially clipping, transparency, fonts and sprite atlases.
-- The renderer uses a 240x400 logical canvas enlarged to the 480x800 LCD. Consider improving expensive drawing paths before increasing logical resolution.
+- All savers use a 400x240 landscape canvas, enlarged 2x and rotated clockwise into the 480x800 LCD. Pixel count and bulk buffers remain the same. Consider improving expensive drawing paths before increasing logical resolution.
 - Describe WebCollage, VidWhacker and desktop-dependent input as bundled/local equivalents, and retain upstream licenses and source-adaptation notes.
