@@ -1,16 +1,14 @@
 /* Copyright (C) 2023 Alif Semiconductor - All Rights Reserved.
  * Use, distribution and modification permitted under the Alif Semiconductor
  * Software License Agreement: https://alifsemi.com/license
- * Joystick Pac-Man for the DevKit-E8 standard MIPI LCD.
+ * Animated multi-source mazes for the DevKit-E8 standard MIPI LCD.
  */
-#include "pacman.h"
+#include "maze.h"
 #include <stdint.h>
 #include <RTE_Components.h>
 #include CMSIS_device_header
 #include "RTE_Device.h"
 #include "Driver_CDC200.h"
-#include "Driver_IO.h"
-#include "pinconf.h"
 #include "board_config.h"
 #include "se_services_port.h"
 
@@ -21,8 +19,8 @@
 #if RTE_CDC200_PIXEL_FORMAT != 2
 #error "This renderer requires RGB565 (RTE_CDC200_PIXEL_FORMAT = 2)"
 #endif
-_Static_assert(LCD_WIDTH == GAME_LCD_WIDTH && LCD_HEIGHT == GAME_LCD_HEIGHT,
-               "Pac-Man UI requires the standard 480 x 800 LCD");
+_Static_assert(LCD_WIDTH == MAZE_LCD_WIDTH && LCD_HEIGHT == MAZE_LCD_HEIGHT,
+               "Maze UI requires the standard 480 x 800 LCD");
 
 /* Bulk SRAM is accessible to CDC DMA; DTCM holds normal data and stack. */
 static uint16_t framebuffers[2][LCD_HEIGHT][LCD_WIDTH]
@@ -80,48 +78,8 @@ static void clean_frame(uint32_t index)
     __DSB();
 }
 
-/* E8 mapping from the pack's vio_DevKit-E8.c: A=left, D=right,
- * B=up, C=down. All switches are active low on GPIO15. */
-extern ARM_DRIVER_GPIO Driver_GPIO15;
-static const uint8_t joystick_pins[5] = {
-    BOARD_JOY_SW_A_GPIO_PIN, BOARD_JOY_SW_D_GPIO_PIN,
-    BOARD_JOY_SW_B_GPIO_PIN, BOARD_JOY_SW_C_GPIO_PIN,
-    BOARD_JOY_SW_CENTER_GPIO_PIN
-};
-Pacman game;
-volatile uint32_t joystick_raw;
-volatile uint32_t joystick_keys;
-static uint32_t input_at, candidate_at, candidate_keys;
+Maze maze;
 
-static void joystick_init(void)
-{
-    for (unsigned i = 0; i < 5; ++i) {
-        uint8_t pin = joystick_pins[i];
-        check_driver(pinconf_set(PORT_15, pin, PINMUX_ALTERNATE_FUNCTION_0,
-            PADCTRL_READ_ENABLE | PADCTRL_SCHMITT_TRIGGER_ENABLE |
-            PADCTRL_DRIVER_DISABLED_PULL_UP | PADCTRL_OUTPUT_DRIVE_STRENGTH_4MA));
-        check_driver(Driver_GPIO15.Initialize(pin, NULL));
-        check_driver(Driver_GPIO15.PowerControl(pin, ARM_POWER_FULL));
-        check_driver(Driver_GPIO15.SetDirection(pin, GPIO_PIN_DIRECTION_INPUT));
-    }
-}
-
-static void service_input(void)
-{
-    uint32_t now = ms_ticks;
-    if (now - input_at < 5U) return;
-    input_at = now;
-    uint32_t raw = 0;
-    for (unsigned i = 0; i < 5; ++i) {
-        uint32_t value;
-        check_driver(Driver_GPIO15.GetValue(joystick_pins[i], &value));
-        if (value == 0U) raw |= 1U << i;
-    }
-    joystick_raw = raw;
-    if (raw != candidate_keys) { candidate_keys = raw; candidate_at = now; }
-    if (now - candidate_at >= 20U) joystick_keys = candidate_keys;
-    pacman_update(&game, now, joystick_keys);
-}
 static void present(uint32_t index)
 {
     check_driver(Driver_CDC200.Control(CDC200_FRAMEBUF_UPDATE_VSYNC,
@@ -135,7 +93,6 @@ static void present(uint32_t index)
         if (display_events != 0U || (uint32_t)(ms_ticks - started) > 250U) {
             fail(ARM_DRIVER_ERROR_TIMEOUT);
         }
-        service_input();
         __WFI();
     }
     ++frames_presented;
@@ -173,10 +130,9 @@ int main(void)
     check_service(status, service_error);
 
     app_stage = 3U;
-    joystick_init();
-    pacman_init(&game, ms_ticks);
+    maze_init(&maze, ms_ticks, ms_ticks ^ SysTick->VAL ^ SystemCoreClock);
     for (uint32_t i = 0; i < 2U; ++i) {
-        pacman_render(&framebuffers[i][0][0], &game);
+        maze_render(&framebuffers[i][0][0], &maze);
         clean_frame(i);
     }
     app_stage = 4U;
@@ -198,13 +154,12 @@ int main(void)
         if (display_events != 0U) {
             fail(ARM_DRIVER_ERROR);
         }
-        service_input();
-        pacman_render(&framebuffers[back][0][0], &game);
+        maze_update(&maze, ms_ticks);
+        maze_render(&framebuffers[back][0][0], &maze);
         clean_frame(back);
         present(back);
         back ^= 1U;
         while ((uint32_t)(ms_ticks - frame_start) < FRAME_MS) {
-            service_input();
             __WFI();
         }
     }
