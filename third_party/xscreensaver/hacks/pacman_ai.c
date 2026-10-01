@@ -205,7 +205,7 @@ static int
 already_tried (ghoststruct *g, int x, int y)
 {
     int i = 0;
-    if (! ( 0 <= g->trace_idx && g->trace_idx < GHOST_TRACE ) ){
+    if (! ( 0 <= g->trace_idx && g->trace_idx <= GHOST_TRACE ) ){
         fprintf(stderr, "FOUND TRACE ERROR. DUMPING TRACE.\n");
         fprintf(stderr, "%d\n", g->trace_idx );
         for ( i = 0; i < GHOST_TRACE; i++ ){
@@ -274,43 +274,70 @@ move_ghost ( pacmangamestruct * pp,
 }
     
 static int
-recur_back_track ( pacmangamestruct * pp, ghoststruct *g, int row, int col ){
-    int new_row, new_col;
+back_track ( pacmangamestruct * pp, ghoststruct *g, int row, int col ){
+    typedef struct {
+        unsigned short row, col;
+        unsigned char next, incoming;
+    } search_frame;
+    static const pos order[DIRVECS] = {pos_left, pos_up, pos_down, pos_right};
+    search_frame *stack;
+    int depth = 1, found = False;
 
-    if ( already_tried ( g, col, row ) )
+    if (!pacman_check_pos(pp,row,col,True) || already_tried(g,col,row))
         return False;
-
-    if ( found_jail ( col, row ) )
+    if (found_jail(col,row))
         return True;
-
-    save_position ( g, col, row );
-
-    if ( move_ghost ( pp, row, col, pos_left, &new_row, &new_col ))
-        if ( recur_back_track ( pp, g, new_row, new_col )){
-                 store_dir ( g, pos_left );
-                 return True;
+    /* Each frame owns a distinct visited cell. No path can use more than
+     * the fixed maze area; keep those frames off the 64 KiB CPU stack. */
+    stack = (search_frame *) malloc(GHOST_TRACE * sizeof(*stack));
+    if (!stack) return False;
+    stack[0] = (search_frame){row,col,0,0};
+    save_position(g,col,row);
+    while (depth) {
+        search_frame *frame = &stack[depth-1];
+        int new_row, new_col;
+        pos direction;
+        if (frame->next == DIRVECS) { depth--; continue; }
+        direction = order[frame->next++];
+        if (!move_ghost(pp,frame->row,frame->col,direction,&new_row,&new_col)
+            || already_tried(g,new_col,new_row))
+            continue;
+        if (found_jail(new_col,new_row)) {
+            int i;
+            /* Preserve the original recursive unwind's reversed path. */
+            store_dir(g,direction);
+            for (i = depth-1; i > 0; i--)
+                store_dir(g,(pos)stack[i].incoming);
+            found = True;
+            break;
         }
-
-    if ( move_ghost ( pp, row, col, pos_up, &new_row, &new_col ))
-        if ( recur_back_track ( pp, g, new_row, new_col )){
-                 store_dir ( g, pos_up );
-                 return True;
-        }
-
-    if ( move_ghost ( pp, row, col, pos_down, &new_row, &new_col ))
-        if ( recur_back_track ( pp, g, new_row, new_col )){
-                 store_dir ( g, pos_down );
-                 return True;
-        }
-
-    if ( move_ghost ( pp, row, col, pos_right, &new_row, &new_col ))
-        if ( recur_back_track ( pp, g, new_row, new_col )){
-                 store_dir ( g, pos_right );
-                 return True;
-        }
-
-    return False;
+        assert(depth < GHOST_TRACE);
+        stack[depth++] = (search_frame){new_row,new_col,0,direction};
+        save_position(g,new_col,new_row);
+    }
+    free(stack);
+    return found;
 }
+
+#ifdef XS_HOST
+/* Exercise the actual path search independently of a ghost being eaten. */
+int xs_pacman_ghost_path_test(pacmangamestruct *pp, int row, int col,
+                             unsigned *hash_out, unsigned *length_out) {
+    ghoststruct *g = (ghoststruct *) calloc(1,sizeof(*g));
+    unsigned hash = 2166136261U;
+    int i;
+    clear_trace(g); clear_dir(g);
+    if (!back_track(pp,g,row,col)) { free(g); return 0; }
+    for (i = g->home_count-1; i >= 0; i--) {
+        row += g->way_home[i].vx; col += g->way_home[i].vy;
+        if (!pacman_check_pos(pp,row,col,True)) { free(g); return 0; }
+        hash = (hash ^ (unsigned)(row*LEVWIDTH+col))*16777619U;
+    }
+    *hash_out = hash; *length_out = (unsigned)g->home_count;
+    i = found_jail(col,row);
+    free(g); return i;
+}
+#endif
 
 static void
 find_home ( pacmangamestruct *pp, ghoststruct *g ){
@@ -332,7 +359,7 @@ find_home ( pacmangamestruct *pp, ghoststruct *g ){
     clear_dir ( tmp_ghost );
     r = tmp_ghost->row;
     c = tmp_ghost->col;
-    if ( ! recur_back_track ( pp, tmp_ghost, r, c ) ){        
+    if ( ! back_track ( pp, tmp_ghost, r, c ) ){
         fprintf(stderr, "Could not find way home.#@$?\n");
         pacman_get_jail_opening ( &cx, &cy);
         fprintf(stderr, "Jail was at (%d%d)\n", cx,cy);   

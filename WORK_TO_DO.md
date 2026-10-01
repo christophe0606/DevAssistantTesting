@@ -1,5 +1,13 @@
 # XScreenSaver port: future work and board-validation notes
 
+## Active validation: runtime stack fixes and natural rotations
+
+- Normal cycling faulted in recursive creatlevelblock/nextstep; live UFSR=0x0010 confirmed STKOF against the 64 KiB CPU stack. The generator has a 1312-byte local maze snapshot per recursive frame.
+- Pacman generation is fixed with bounded heap backtracking: 768 exact reference matches, 12,288 generations on a 64 KiB host stack, seeded board passes and an automatic transition. No reboot was needed.
+- Expanded small-stack rotations also found Polyominoes' region-walk overflow. Its queue replacement preserves 32 seeded images. Maze's union-find and Pacman's ghost DFS now use iterative walks; 32 Maze/Pacman images and 1,024 ghost path references match. The bounds guard fixes an access violation triggered by a direct test from outside blank cells. 16,384 connected/disconnected path cases pass on a 64 KiB stack.
+- Release b-7 passed ten targeted board checks and six seeded host rotations on a 64 KiB stack. **Two sustained natural board rotations are in progress and still pending.** Record them separately in `third_party/xscreensaver/runtime-stress-progress.json`; preserve the 146 historical individual passes.
+- Finish natural rotations, update the evidence and documentation, clear breakpoints and leave final Release through CMSIS Run with the debugger detached. Do not claim every random state or distinct animation frame has been validated.
+
 ## Precompute glyph bitmaps before building
 
 - Phosphor currently prepares all Latin and DEC glyphs, including normal and inverted variants, at runtime. Its desktop scale of 6 took about 12 seconds to initialize on the E8. Scale 2 passed the individual Release board check; a separate timing check measured 3.661 seconds from selection to first presentation. Precomputation remains future work.
@@ -12,7 +20,7 @@
 
 - All 146 entries passed on 2026-10-01. The 42 earlier passes for indices 20 through 61 were retained; the resumed run checked 62 through 145, then 0 through 19.
 - Every saved result records multiple frame presentations, zero application/display/saver errors and clear Cortex-M fault registers. Presentations can repeat a canvas; they are not necessarily distinct animation updates. Results span successive Release builds rather than one complete replay on the final image.
-- Four automatic transitions passed at 10.010–10.025 seconds, including 145-to-0 wraparound. The final Release image is running through CMSIS Run with the debugger detached and breakpoints cleared.
+- Historical automatic transitions passed at 10.010–10.025 seconds, including 145-to-0 wraparound. Current runtime stress status and image are recorded above and in CHECKPOINT.md.
 - Results and timing evidence are in `third_party/xscreensaver/board-test-progress.json`; inventory and README reflect this evidence. `CHECKPOINT.md` records the completed state, and `tools/resume_board_tests.js` retains the MCP helpers with all passes loaded.
 - For future targeted checks, use `xs_cycle_enabled = 0` and `xs_requested_saver = index` through the normal main loop. Allow slow initialization to finish before judging animation. Injecting `xs_gallery_select()` previously stalled the debugger at Coral; the requested-index control passed.
 

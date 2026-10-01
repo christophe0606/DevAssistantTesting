@@ -1,6 +1,20 @@
-# Completed XScreenSaver port validation
+# XScreenSaver port: runtime stress validation in progress
 
-Updated on 2026-10-01. The resumed board-validation work is complete. Do not restart the individual tests.
+## Reopened runtime issue (2026-10-01)
+
+The user observed a frozen display after normal cycling. Live attach/pause found the CPU in Fault_Handler, with repeated creatlevelblock/nextstep frames in pacman_level.c. get_fault_info confirmed UFSR=0x0010 (STKOF, Armv8-M stack-limit crossing); HFSR/MMFSR/BFSR were zero. The stack region is 0x200f0000–0x20100000 (64 KiB). Each recursive generator frame stores a 1312-byte lev_t snapshot. The individual Pacman check had passed; it did not establish safety for every random maze. Earlier passing results remain historical evidence, not proof of sustained rotation.
+
+Fault/register inspection made the debugger unresponsive. The user stopped debugging and CMSIS Run without rebooting; subsequent load/debug sessions succeeded. Pacman's generator now uses bounded heap backtracking. Its 768 seeded maze/dot/RNG reference records match exactly, and 12,288 generations passed on a 64 KiB host stack. Seeded procedural Pacman board checks and its automatic transition passed on build b-3.
+
+Expanded 64 KiB host rotations found a second stack overflow in Polyominoes' recursive connected-component walk for seeds 1 and 2. Its bounded queue replacement preserves 32 seeded rendered images. A source audit also replaced Maze's union-find recursion and Pacman's ghost DFS with iterative walks. Pacman's position check now rejects coordinates outside the maze: a direct test starting in outside blank cells previously caused a host access violation. The corrected path test independently checks jail connectivity, including disconnected cells; 16,384 cases passed on a 64 KiB stack and 1,024 reference paths match. The 32 seeded Maze/Pacman images also match pre-change captures. Windows stress failures report exit codes without crash-dialog UI.
+
+Final native runs passed 876 slots (six full rotations) on a 64 KiB stack across seeds 1, 2 and 1741900050. Release build b-7 and load/debug d-8 succeeded. Ten targeted board cases passed on this image: Polyominoes seeds 1, 2 and 1741900050; Maze seeds 1 and 2; Pacman seeds 1, 2, 3, 5 and 7. All errors/fault flags were clear.
+
+**Sustained natural board cycling is currently running on b-7, with debugger attached and all breakpoints cleared. Two full rotations are still pending.** Do not reset, rebuild or request another saver while measuring this. Use the persisted `xs_monitor_sustained` helper inside functions.exec, or pause/read the status blocks and resume through CMSIS MCP. Samples and final evidence belong in `third_party/xscreensaver/runtime-stress-progress.json`. The current helper tracks progression from observed entry 2, validates presentation/error/fault state, and marks passing only after 292 natural transitions. Refresh the evidence file before yielding or compaction.
+
+The completed-check history below predates the runtime fault.
+
+Updated on 2026-10-01. Preserve all historical individual passes; those checks alone did not establish sustained runtime stability.
 
 ## Workspace and requested outcome
 
@@ -26,11 +40,11 @@ Updated on 2026-10-01. The resumed board-validation work is complete. Do not res
 ## Final build and hardware state
 
 - Solution: `Blinky.csolution.yml`; target **DevKit-E8@Release**, context `M55_HP.Release+DevKit-E8`; AC6 6.24, `-O3 -ffast-math`.
-- Firmware implementation is still build **b-41** from the earlier session. No firmware source changes were needed during resumed validation.
+- Current firmware is build **b-7**, including Pacman, Polyominoes and Maze stack fixes and Pacman coordinate bounds. Build IDs are session-local; b-41 below is historical.
 - Program: `out/M55_HP/DevKit-E8/Release/M55_HP.axf`; program its combined HEX containing code and assets.
 - Resumed CMSIS window: PID **29888**. Re-discover and pin the window after a VS Code restart.
-- Resumed load/debug job **d-1** passed; final **load_and_run job r-2** passed.
-- **CMSIS Run is active; debugger detached; all breakpoints cleared; normal cycling enabled by the firmware startup default.**
+- Current load/debug job **d-8** passed. Earlier d-1 / r-2 are historical.
+- **Natural cycling is running under the debugger, all breakpoints cleared, with periodic brief pause/read/resume checkpoints.** After sustained checks, use CMSIS load_and_run and leave the debugger detached.
 - Do not stop or reflash the running image solely to repeat completed checks.
 
 ## Implementation and memory findings to retain

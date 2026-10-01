@@ -128,6 +128,8 @@ typedef struct _polyominoesstruct{
 
 /* The array that tells where the polyominoes are attached. */
   int *array, *changed_array;
+  /* One slot per board cell for nonrecursive connected-component walks. */
+  int *region_queue;
 
 /* These specify the dimensions of how things appear on the screen. */
   int box, x_margin, y_margin;
@@ -406,16 +408,28 @@ static void next_poly_no(polyominoesstruct *sp, int *poly_no)
    a number of blanks that is not a multiple of n.
 */
 
+static void enqueue_blank(polyominoesstruct *sp, int *tail, int x, int y, int blank_mark)
+{
+  if (ARRAY(x,y) == -1) {
+    /* Mark on insertion so a cell is queued at most once. */
+    ARRAY(x,y) = blank_mark;
+    sp->region_queue[(*tail)++] = x*sp->height+y;
+  }
+}
+
 static void count_adjacent_blanks(polyominoesstruct *sp, int *count, int x, int y, int blank_mark)
 {
-
-  if (ARRAY(x,y) == -1) {
+  int head = 0, tail = 0;
+  enqueue_blank(sp,&tail,x,y,blank_mark);
+  while (head < tail) {
+    int cell = sp->region_queue[head++];
+    x = cell/sp->height;
+    y = cell%sp->height;
     (*count)++;
-    ARRAY(x,y) = blank_mark;
-    if (x>=1) count_adjacent_blanks(sp, count,x-1,y,blank_mark);
-    if (x<sp->width-1) count_adjacent_blanks(sp, count,x+1,y,blank_mark);
-    if (y>=1) count_adjacent_blanks(sp, count,x,y-1,blank_mark);
-    if (y<sp->height-1) count_adjacent_blanks(sp, count,x,y+1,blank_mark);
+    if (x>=1) enqueue_blank(sp,&tail,x-1,y,blank_mark);
+    if (x<sp->width-1) enqueue_blank(sp,&tail,x+1,y,blank_mark);
+    if (y>=1) enqueue_blank(sp,&tail,x,y-1,blank_mark);
+    if (y<sp->height-1) enqueue_blank(sp,&tail,x,y+1,blank_mark);
   }
 }
 
@@ -1066,6 +1080,7 @@ ENTRYPOINT void free_polyominoes(ModeInfo * mi)
   deallocate(sp->reason_to_not_attach, int);
   deallocate(sp->array, int);
   deallocate(sp->changed_array, int);
+  deallocate(sp->region_queue, int);
 
   free_bitmaps(sp);
 }
@@ -2188,6 +2203,7 @@ init_polyominoes (ModeInfo * mi)
 
   allocate(sp->array,int,sp->width*sp->height*sizeof(int));
   allocate(sp->changed_array,int,sp->width*sp->height*sizeof(int));
+  allocate(sp->region_queue,int,sp->width*sp->height*sizeof(int));
   for (x=0;x<sp->width;x++) for (y=0;y<sp->height;y++) ARRAY(x,y) = -1;
 
   sp->left_right = NRAND(2);

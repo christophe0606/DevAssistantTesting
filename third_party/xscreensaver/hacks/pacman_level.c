@@ -326,7 +326,7 @@ tryset (lev_t * level, const unsigned xpos, const unsigned ypos,
     return True;
 }
 
-/* Tries certain combinations of blocks in the level recursively. */
+/* Start the level's direction walk; descendants use the heap work stack. */
 static unsigned
 nextstep (pacmangamestruct *pp, 
           lev_t * level, const unsigned x, const unsigned y,
@@ -377,64 +377,118 @@ nextstep (pacmangamestruct *pp,
     return inc;
 }
 
+/* A recursive desktop frame carried a 1312-byte maze snapshot. Use a bounded
+ * heap work stack for the M55's 64 KiB CPU stack; preserve random-call order
+ * and the shared direction permutations used by the original algorithm. */
+typedef struct {
+    lev_t savedlev;
+    unsigned x, y, tried, tilenr, ndirs, inc;
+    int walking;
+} level_frame;
+#define LEVEL_FRAME_LIMIT (LEVWIDTH * LEVHEIGHT)
+
+/* 2 means push a frame; 0 / -1 retain the original terminal results. */
 static int
-creatlevelblock (pacmangamestruct *pp, 
-                 lev_t * level, const unsigned x, const unsigned y)
+begin_level_frame (lev_t *level, unsigned x, unsigned y, level_frame *frame)
 {
     unsigned tried = GETNB (TILES_COUNT);
-    unsigned tilenr;
-    unsigned ret;
-    lev_t savedlev;
-
-    if (!pp->tiles) {
-        pp->tiles = (struct tiles *) malloc (sizeof (def_tiles));
-        memcpy (pp->tiles, def_tiles, sizeof (def_tiles));
-    }
-
-    if (!((x < LEVWIDTH) && (y < LEVHEIGHT)))
-        return 0;
-
-    if (checkunsetdef (level, x, y) != 0)
-        return -1;
-
-    if (x == 0)
-        tried &= ~(1 << 0);
+    if (!(x < LEVWIDTH && y < LEVHEIGHT)) return 0;
+    if (checkunsetdef (level, x, y)) return -1;
+    if (x == 0) tried &= ~(1 << 0);
     else if (x == 1)
         tried &= ~(1 << 4 | 1 << 5 | 1 << 6 | 1 << 8 | 1 << 9 | 1 << 10);
-    else if (x == LEVWIDTH - 1)
-        tried &= ~(1 << 0);
+    else if (x == LEVWIDTH - 1) tried &= ~(1 << 0);
     else if (x == LEVWIDTH - 2)
         tried &= ~(1 << 2 | 1 << 3 | 1 << 6 | 1 << 7 | 1 << 8 | 1 << 10);
-
     if (y == 1)
         tried &= ~(1 << 2 | 1 << 5 | 1 << 6 | 1 << 7 | 1 << 9 | 1 << 10);
-    else if (y == 0)
-        tried &= ~(1 << 1);
-    else if (y == LEVHEIGHT - 1)
-        tried &= ~(1 << 1);
+    else if (y == 0) tried &= ~(1 << 1);
+    else if (y == LEVHEIGHT - 1) tried &= ~(1 << 1);
     else if (y == LEVHEIGHT - 2)
         tried &= ~(1 << 3 | 1 << 4 | 1 << 7 | 1 << 8 | 1 << 9 | 1 << 10);
+    frame->x = x; frame->y = y; frame->tried = tried; frame->walking = 0;
+    memcpy (&frame->savedlev, level, sizeof (lev_t));
+    return 2;
+}
 
-    /* make a copy of the current level, so we can go back on the stack */
-    (void) memcpy (&savedlev, level, sizeof (lev_t));
+static void
+level_child_result (pacmangamestruct *pp, lev_t *level,
+                    level_frame *frame, int result)
+{
+    if (result == 0) {
+        memcpy (level, &frame->savedlev, sizeof (lev_t));
+        frame->tried &= ~pp->tiles[frame->tilenr].simular_to;
+        frame->walking = 0;
+    } else if (result != -1) frame->inc += (unsigned) result;
+}
 
-    /* while there are still some blocks left to try */
-    while (tried != 0x00) {
-        tilenr = tileprob[NRAND (MAXTILEPROB)];
-
-        if (!TESTNB (tried, tilenr))
-            continue;
-
-        if (tryset (level, x, y, pp->tiles[tilenr].block) != 0) {
-            if ((ret = nextstep (pp, level, x, y, pp->tiles[tilenr].dirvec,
-                                 pp->tiles[tilenr].ndirs)) != 0) {
-                return ret + 1;
-            }
-            (void) memcpy (level, &savedlev, sizeof (lev_t));
-        }
-        tried &= ~(pp->tiles[tilenr].simular_to);
+static int
+creatlevelblock (pacmangamestruct *pp, lev_t *level,
+                 const unsigned x, const unsigned y)
+{
+    level_frame *frames;
+    unsigned depth = 1;
+    int result;
+    if (!pp->tiles) {
+        pp->tiles = (struct tiles *) malloc (sizeof (def_tiles));
+        if (!pp->tiles) return 0;
+        memcpy (pp->tiles, def_tiles, sizeof (def_tiles));
     }
-    return 0;
+    if (!(x < LEVWIDTH && y < LEVHEIGHT)) return 0;
+    if (checkunsetdef (level, x, y)) return -1;
+    frames = (level_frame *) malloc (LEVEL_FRAME_LIMIT * sizeof (*frames));
+    if (!frames) return 0;
+    begin_level_frame (level, x, y, &frames[0]);
+    for (;;) {
+        level_frame *frame = &frames[depth - 1];
+        if (!frame->walking) {
+            unsigned tilenr;
+            if (!frame->tried) { result = 0; goto returned; }
+            tilenr = tileprob[NRAND (MAXTILEPROB)];
+            if (!TESTNB (frame->tried, tilenr)) continue;
+            if (!tryset (level, frame->x, frame->y, pp->tiles[tilenr].block)) {
+                frame->tried &= ~pp->tiles[tilenr].simular_to;
+                continue;
+            }
+            frame->tilenr = tilenr; frame->ndirs = pp->tiles[tilenr].ndirs;
+            frame->inc = 0; frame->walking = 1;
+        }
+        if (!frame->ndirs) {
+            result = (int) (frame->inc ? frame->inc : 1) + 1;
+            goto returned;
+        } else {
+            unsigned *dirvec = pp->tiles[frame->tilenr].dirvec;
+            unsigned curdir, child_x = frame->x, child_y = frame->y;
+            frame->ndirs--;
+            if (!frame->ndirs) curdir = dirvec[0];
+            else {
+                unsigned pos = NRAND (frame->ndirs);
+                curdir = dirvec[pos]; dirvec[pos] = dirvec[frame->ndirs];
+                dirvec[frame->ndirs] = curdir;
+            }
+            switch (curdir) {
+            case GO_UP: child_y--; break;
+            case GO_RIGHT: child_x++; break;
+            case GO_DOWN: child_y++; break;
+            case GO_LEFT: child_x--; break;
+            default: assert (0);
+            }
+            /* Each ancestor marks a distinct cell before pushing a child.
+             * Once every cell is marked, no further frame can be needed. */
+            if (!(child_x < LEVWIDTH && child_y < LEVHEIGHT)) result = 0;
+            else if (checkunsetdef (level, child_x, child_y)) result = -1;
+            else {
+                assert (depth < LEVEL_FRAME_LIMIT);
+                result = begin_level_frame (level, child_x, child_y, &frames[depth]);
+            }
+            if (result == 2) { depth++; continue; }
+            level_child_result (pp, level, frame, result);
+            continue;
+        }
+returned:
+        if (--depth == 0) { free (frames); return result; }
+        level_child_result (pp, level, &frames[depth - 1], result);
+    }
 }
 
 /* Fills up all empty space so there is wall everywhere. */
@@ -752,6 +806,8 @@ pacman_createnewlevel (pacmangamestruct *pp)
 int
 pacman_check_pos (pacmangamestruct * pp, int y, int x, int ghostpass)
 {
+    if (x < 0 || y < 0 || x >= LEVWIDTH || y >= LEVHEIGHT)
+        return 0;
     if ((pp->level[y * LEVWIDTH + x] == BLOCK_DOT_2) ||
         (pp->level[y * LEVWIDTH + x] == BLOCK_EMPTY) ||
         (pp->level[y * LEVWIDTH + x] == BLOCK_DOT_BONUS) ||

@@ -20,7 +20,9 @@ WebCollage composes random crops from bundled content. VidWhacker cycles local i
 ## Source adaptations
 
 - `jwxyz.h`: load the platform configuration before macro decisions; board abort/exit wrappers; expose fill/stipple GC fields.
-- Maze: bound its desktop million-cell arrays to 64×128 and enforce compatible cell sizes.
+- Maze: bound its desktop million-cell arrays to 64×128, enforce compatible cell sizes, and use iterative union-find path compression.
+- Pacman: move maze-generation backtracking and ghost-path DFS to bounded heap work stacks; reject maze coordinates outside the fixed grid.
+- Polyominoes: replace the recursive blank-region flood with a queue bounded by puzzle cell count.
 - Rocks: cap intermediate rock sprites at 160 pixels.
 - FilmLeader: reduce its intermediate width to 400 pixels.
 - Droste: reduce input oversampling from 2.5 to 2 so its two image copies fit the separate SRAM banks.

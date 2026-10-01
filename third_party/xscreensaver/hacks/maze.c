@@ -442,16 +442,16 @@ init_sets(struct state *st)
 static int
 get_set(struct state *st, int num)
 {
-  int s;
-
-  if(st->sets[num]==num)
-    return num;
-  else
-    {
-      s = get_set(st, st->sets[num]);
-      st->sets[num] = s;
-      return s;
-    }
+  int root = num;
+  while (st->sets[root] != root)
+    root = st->sets[root];
+  /* Compress the same path without a C stack frame per cell. */
+  while (st->sets[num] != num) {
+    int next = st->sets[num];
+    st->sets[num] = root;
+    num = next;
+  }
+  return root;
 }
 
 /* Join two sets together. */

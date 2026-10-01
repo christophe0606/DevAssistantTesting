@@ -1,0 +1,277 @@
+{
+  "updated_utc": "2026-10-01 13:57:04 UTC",
+  "host": {
+    "generator": {
+      "records": 12288,
+      "stack_bytes": 65536,
+      "reference_matches": 768
+    },
+    "paths": {
+      "records": 16384,
+      "seeds": 4096,
+      "stack_bytes": 65536,
+      "reference_matches": 1024
+    },
+    "polyominoes": {
+      "image_matches": 32
+    },
+    "maze_pacman": {
+      "image_matches": 32
+    },
+    "rotations": {
+      "seeds": [
+        1,
+        2,
+        1741900050
+      ],
+      "slots_per_seed": 292,
+      "stack_bytes": 65536,
+      "passed": true
+    }
+  },
+  "targeted_board": [
+    {
+      "index": 81,
+      "name": "polyominoes",
+      "build": "b-7",
+      "passed": true,
+      "elapsed_ms": 6767,
+      "frames": 204,
+      "peak_bytes": 49216,
+      "fault_status": {
+        "HFSR": 0,
+        "MMFSR": 0,
+        "BFSR": 0,
+        "UFSR": 0
+      },
+      "utc": "2026-10-01 13:53:38 UTC",
+      "seed": 1
+    },
+    {
+      "index": 81,
+      "name": "polyominoes",
+      "build": "b-7",
+      "passed": true,
+      "elapsed_ms": 7296,
+      "frames": 191,
+      "peak_bytes": 58288,
+      "fault_status": {
+        "HFSR": 0,
+        "MMFSR": 0,
+        "BFSR": 0,
+        "UFSR": 0
+      },
+      "utc": "2026-10-01 13:53:47 UTC",
+      "seed": 2
+    },
+    {
+      "index": 81,
+      "name": "polyominoes",
+      "build": "b-7",
+      "passed": true,
+      "elapsed_ms": 7125,
+      "frames": 215,
+      "peak_bytes": 49216,
+      "fault_status": {
+        "HFSR": 0,
+        "MMFSR": 0,
+        "BFSR": 0,
+        "UFSR": 0
+      },
+      "utc": "2026-10-01 13:53:58 UTC",
+      "seed": 1741900050
+    },
+    {
+      "index": 18,
+      "name": "maze",
+      "build": "b-7",
+      "passed": true,
+      "elapsed_ms": 7865,
+      "frames": 238,
+      "peak_bytes": 179168,
+      "fault_status": {
+        "HFSR": 0,
+        "MMFSR": 0,
+        "BFSR": 0,
+        "UFSR": 0
+      },
+      "utc": "2026-10-01 13:54:08 UTC",
+      "seed": 1
+    },
+    {
+      "index": 18,
+      "name": "maze",
+      "build": "b-7",
+      "passed": true,
+      "elapsed_ms": 7004,
+      "frames": 212,
+      "peak_bytes": 177584,
+      "fault_status": {
+        "HFSR": 0,
+        "MMFSR": 0,
+        "BFSR": 0,
+        "UFSR": 0
+      },
+      "utc": "2026-10-01 13:54:17 UTC",
+      "seed": 2
+    },
+    {
+      "index": 97,
+      "name": "pacman",
+      "build": "b-7",
+      "passed": true,
+      "elapsed_ms": 7008,
+      "frames": 213,
+      "peak_bytes": 2920560,
+      "fault_status": {
+        "HFSR": 0,
+        "MMFSR": 0,
+        "BFSR": 0,
+        "UFSR": 0
+      },
+      "utc": "2026-10-01 13:54:26 UTC",
+      "seed": 1
+    },
+    {
+      "index": 97,
+      "name": "pacman",
+      "build": "b-7",
+      "passed": true,
+      "elapsed_ms": 6842,
+      "frames": 208,
+      "peak_bytes": 2920560,
+      "fault_status": {
+        "HFSR": 0,
+        "MMFSR": 0,
+        "BFSR": 0,
+        "UFSR": 0
+      },
+      "utc": "2026-10-01 13:54:34 UTC",
+      "seed": 2
+    },
+    {
+      "index": 97,
+      "name": "pacman",
+      "build": "b-7",
+      "passed": true,
+      "elapsed_ms": 6710,
+      "frames": 204,
+      "peak_bytes": 2920560,
+      "fault_status": {
+        "HFSR": 0,
+        "MMFSR": 0,
+        "BFSR": 0,
+        "UFSR": 0
+      },
+      "utc": "2026-10-01 13:54:43 UTC",
+      "seed": 3
+    },
+    {
+      "index": 97,
+      "name": "pacman",
+      "build": "b-7",
+      "passed": true,
+      "elapsed_ms": 7074,
+      "frames": 215,
+      "peak_bytes": 2137136,
+      "fault_status": {
+        "HFSR": 0,
+        "MMFSR": 0,
+        "BFSR": 0,
+        "UFSR": 0
+      },
+      "utc": "2026-10-01 13:54:52 UTC",
+      "seed": 5
+    },
+    {
+      "index": 97,
+      "name": "pacman",
+      "build": "b-7",
+      "passed": true,
+      "elapsed_ms": 6776,
+      "frames": 206,
+      "peak_bytes": 2137136,
+      "fault_status": {
+        "HFSR": 0,
+        "MMFSR": 0,
+        "BFSR": 0,
+        "UFSR": 0
+      },
+      "utc": "2026-10-01 13:55:01 UTC",
+      "seed": 7
+    }
+  ],
+  "sustained_board": {
+    "build": "b-7",
+    "start_utc": "2026-10-01 13:55:18 UTC",
+    "samples": [
+      {
+        "utc": "2026-10-01 13:55:37 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 94909,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 2686,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 2,
+        "next_frame": 94872,
+        "started": 93098,
+        "xs_memory_peak": 24384
+      },
+      {
+        "utc": "2026-10-01 13:56:20 UTC",
+        "fault_status": {
+          "HFSR": 0,
+          "MMFSR": 0,
+          "BFSR": 0,
+          "UFSR": 0
+        },
+        "ms_ticks": 136827,
+        "app_stage": 8,
+        "display_events": 0,
+        "app_error": 0,
+        "app_service_error": 0,
+        "frames_presented": 3750,
+        "xs_last_error": 0,
+        "xs_failures": 0,
+        "xs_current_saver": 6,
+        "next_frame": 136838,
+        "started": 133457,
+        "xs_memory_peak": 85136
+      }
+    ],
+    "transitions": 4,
+    "passed": false,
+    "requested_rotations": 2,
+    "first": {
+      "utc": "2026-10-01 13:55:37 UTC",
+      "fault_status": {
+        "HFSR": 0,
+        "MMFSR": 0,
+        "BFSR": 0,
+        "UFSR": 0
+      },
+      "ms_ticks": 94909,
+      "app_stage": 8,
+      "display_events": 0,
+      "app_error": 0,
+      "app_service_error": 0,
+      "frames_presented": 2686,
+      "xs_last_error": 0,
+      "xs_failures": 0,
+      "xs_current_saver": 2,
+      "next_frame": 94872,
+      "started": 93098,
+      "xs_memory_peak": 24384
+    },
+    "first_index": 2
+  }
+}
