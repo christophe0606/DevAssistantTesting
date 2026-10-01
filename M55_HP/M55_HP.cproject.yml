@@ -2,14 +2,201 @@
 project:
   device: :M55_HP
 
+  define:
+    - HAVE_CONFIG_H
+    - STANDALONE
+  add-path:
+    - ./xs_port
+    - ../third_party/xscreensaver/hacks
+    - ../third_party/xscreensaver/utils
+    - ../third_party/xscreensaver/jwxyz
   groups:
-    - group: Source Files
+    - group: Board application
       files:
         - file: ./main.c
-        - file: ./pacman.c
-        - file: ./pacman.h
-        - file: ./pacman_ui.c
-        - file: ./app_utils.h
+    - group: CPU XScreenSaver ports
+      misc:
+        - C:
+            - -Wno-everything
+            - -fno-color-diagnostics
+      files:
+        - file: ../third_party/xscreensaver/hacks/attraction.c
+        - file: ../third_party/xscreensaver/hacks/blitspin.c
+        - file: ../third_party/xscreensaver/hacks/bouboule.c
+        - file: ../third_party/xscreensaver/hacks/braid.c
+        - file: ../third_party/xscreensaver/hacks/decayscreen.c
+        - file: ../third_party/xscreensaver/hacks/deco.c
+        - file: ../third_party/xscreensaver/hacks/drift.c
+        - file: ../third_party/xscreensaver/hacks/flame.c
+        - file: ../third_party/xscreensaver/hacks/galaxy.c
+        - file: ../third_party/xscreensaver/hacks/grav.c
+        - file: ../third_party/xscreensaver/hacks/greynetic.c
+        - file: ../third_party/xscreensaver/hacks/halo.c
+        - file: ../third_party/xscreensaver/hacks/helix.c
+        - file: ../third_party/xscreensaver/hacks/hopalong.c
+        - file: ../third_party/xscreensaver/hacks/ifs.c
+        - file: ../third_party/xscreensaver/hacks/imsmap.c
+        - file: ../third_party/xscreensaver/hacks/julia.c
+        - file: ../third_party/xscreensaver/hacks/kaleidescope.c
+        - file: ../third_party/xscreensaver/hacks/maze.c
+        - file: ../third_party/xscreensaver/hacks/moire.c
+        - file: ../third_party/xscreensaver/hacks/noseguy.c
+        - file: ../third_party/xscreensaver/hacks/pedal.c
+        - file: ../third_party/xscreensaver/hacks/penrose.c
+        - file: ../third_party/xscreensaver/hacks/pyro.c
+        - file: ../third_party/xscreensaver/hacks/qix.c
+        - file: ../third_party/xscreensaver/hacks/rocks.c
+        - file: ../third_party/xscreensaver/hacks/rorschach.c
+        - file: ../third_party/xscreensaver/hacks/sierpinski.c
+        - file: ../third_party/xscreensaver/hacks/slidescreen.c
+        - file: ../third_party/xscreensaver/hacks/slip.c
+        - file: ../third_party/xscreensaver/hacks/strange.c
+        - file: ../third_party/xscreensaver/hacks/swirl.c
+        - file: ../third_party/xscreensaver/hacks/goop.c
+        - file: ../third_party/xscreensaver/hacks/starfish.c
+        - file: ../third_party/xscreensaver/hacks/munch.c
+        - file: ../third_party/xscreensaver/hacks/fadeplot.c
+        - file: ../third_party/xscreensaver/hacks/rdbomb.c
+        - file: ../third_party/xscreensaver/hacks/coral.c
+        - file: ../third_party/xscreensaver/hacks/mountain.c
+        - file: ../third_party/xscreensaver/hacks/triangle.c
+        - file: ../third_party/xscreensaver/hacks/xjack.c
+        - file: ../third_party/xscreensaver/hacks/xlyap.c
+        - file: ../third_party/xscreensaver/hacks/cynosure.c
+        - file: ../third_party/xscreensaver/hacks/moire2.c
+        - file: ../third_party/xscreensaver/hacks/flow.c
+        - file: ../third_party/xscreensaver/hacks/epicycle.c
+        - file: ../third_party/xscreensaver/hacks/interference.c
+        - file: ../third_party/xscreensaver/hacks/truchet.c
+        - file: ../third_party/xscreensaver/hacks/bsod.c
+        - file: ../third_party/xscreensaver/hacks/crystal.c
+        - file: ../third_party/xscreensaver/hacks/discrete.c
+        - file: ../third_party/xscreensaver/hacks/distort.c
+        - file: ../third_party/xscreensaver/hacks/kumppa.c
+        - file: ../third_party/xscreensaver/hacks/demon.c
+        - file: ../third_party/xscreensaver/hacks/loop.c
+        - file: ../third_party/xscreensaver/hacks/penetrate.c
+        - file: ../third_party/xscreensaver/hacks/deluxe.c
+        - file: ../third_party/xscreensaver/hacks/compass.c
+        - file: ../third_party/xscreensaver/hacks/squiral.c
+        - file: ../third_party/xscreensaver/hacks/xflame.c
+        - file: ../third_party/xscreensaver/hacks/wander.c
+        - file: ../third_party/xscreensaver/hacks/spotlight.c
+        - file: ../third_party/xscreensaver/hacks/phosphor.c
+        - file: ../third_party/xscreensaver/hacks/xmatrix.c
+        - file: ../third_party/xscreensaver/hacks/petri.c
+        - file: ../third_party/xscreensaver/hacks/shadebobs.c
+        - file: ../third_party/xscreensaver/hacks/ccurve.c
+        - file: ../third_party/xscreensaver/hacks/blaster.c
+        - file: ../third_party/xscreensaver/hacks/bumps.c
+        - file: ../third_party/xscreensaver/hacks/ripples.c
+        - file: ../third_party/xscreensaver/hacks/xspirograph.c
+        - file: ../third_party/xscreensaver/hacks/nerverot.c
+        - file: ../third_party/xscreensaver/hacks/xrayswarm.c
+        - file: ../third_party/xscreensaver/hacks/zoom.c
+        - file: ../third_party/xscreensaver/hacks/whirlwindwarp.c
+        - file: ../third_party/xscreensaver/hacks/rotzoomer.c
+        - file: ../third_party/xscreensaver/hacks/speedmine.c
+        - file: ../third_party/xscreensaver/hacks/vermiculate.c
+        - file: ../third_party/xscreensaver/hacks/twang.c
+        - file: ../third_party/xscreensaver/hacks/apollonian.c
+        - file: ../third_party/xscreensaver/hacks/euler2d.c
+        - file: ../third_party/xscreensaver/hacks/polyominoes.c
+        - file: ../third_party/xscreensaver/hacks/fluidballs.c
+        - file: ../third_party/xscreensaver/hacks/anemone.c
+        - file: ../third_party/xscreensaver/hacks/halftone.c
+        - file: ../third_party/xscreensaver/hacks/metaballs.c
+        - file: ../third_party/xscreensaver/hacks/eruption.c
+        - file: ../third_party/xscreensaver/hacks/popsquares.c
+        - file: ../third_party/xscreensaver/hacks/barcode.c
+        - file: ../third_party/xscreensaver/hacks/piecewise.c
+        - file: ../third_party/xscreensaver/hacks/cloudlife.c
+        - file: ../third_party/xscreensaver/hacks/fontglide.c
+        - file: ../third_party/xscreensaver/hacks/apple2-main.c
+        - file: ../third_party/xscreensaver/hacks/xanalogtv.c
+        - file: ../third_party/xscreensaver/hacks/pong.c
+        - file: ../third_party/xscreensaver/hacks/filmleader.c
+        - file: ../third_party/xscreensaver/hacks/wormhole.c
+        - file: ../third_party/xscreensaver/hacks/pacman.c
+        - file: ../third_party/xscreensaver/hacks/fuzzyflakes.c
+        - file: ../third_party/xscreensaver/hacks/anemotaxis.c
+        - file: ../third_party/xscreensaver/hacks/memscroller.c
+        - file: ../third_party/xscreensaver/hacks/substrate.c
+        - file: ../third_party/xscreensaver/hacks/intermomentary.c
+        - file: ../third_party/xscreensaver/hacks/fireworkx.c
+        - file: ../third_party/xscreensaver/hacks/fiberlamp.c
+        - file: ../third_party/xscreensaver/hacks/boxfit.c
+        - file: ../third_party/xscreensaver/hacks/interaggregate.c
+        - file: ../third_party/xscreensaver/hacks/celtic.c
+        - file: ../third_party/xscreensaver/hacks/cwaves.c
+        - file: ../third_party/xscreensaver/hacks/m6502.c
+        - file: ../third_party/xscreensaver/hacks/abstractile.c
+        - file: ../third_party/xscreensaver/hacks/lcdscrub.c
+        - file: ../third_party/xscreensaver/hacks/hexadrop.c
+        - file: ../third_party/xscreensaver/hacks/tessellimage.c
+        - file: ../third_party/xscreensaver/hacks/binaryring.c
+        - file: ../third_party/xscreensaver/hacks/glitchpeg.c
+        - file: ../third_party/xscreensaver/hacks/vfeedback.c
+        - file: ../third_party/xscreensaver/hacks/scooter.c
+        - file: ../third_party/xscreensaver/hacks/marbling.c
+        - file: ../third_party/xscreensaver/hacks/binaryhorizon.c
+        - file: ../third_party/xscreensaver/hacks/droste.c
+        - file: ../third_party/xscreensaver/hacks/ant.c
+        - file: ../third_party/xscreensaver/hacks/bubbles.c
+        - file: ../third_party/xscreensaver/hacks/critical.c
+        - file: ../third_party/xscreensaver/hacks/flag.c
+        - file: ../third_party/xscreensaver/hacks/forest.c
+        - file: ../third_party/xscreensaver/hacks/hyperball.c
+        - file: ../third_party/xscreensaver/hacks/hypercube.c
+        - file: ../third_party/xscreensaver/hacks/laser.c
+        - file: ../third_party/xscreensaver/hacks/lightning.c
+        - file: ../third_party/xscreensaver/hacks/lisa.c
+        - file: ../third_party/xscreensaver/hacks/lissie.c
+        - file: ../third_party/xscreensaver/hacks/lmorph.c
+        - file: ../third_party/xscreensaver/hacks/rotor.c
+        - file: ../third_party/xscreensaver/hacks/sphere.c
+        - file: ../third_party/xscreensaver/hacks/spiral.c
+        - file: ../third_party/xscreensaver/hacks/t3d.c
+        - file: ../third_party/xscreensaver/hacks/vines.c
+        - file: ../third_party/xscreensaver/hacks/whirlygig.c
+        - file: ../third_party/xscreensaver/hacks/worm.c
+        - file: ../third_party/xscreensaver/hacks/xsublim.c
+        - file: ../third_party/xscreensaver/hacks/juggle.c
+        - file: ../third_party/xscreensaver/hacks/thornbird.c
+        - file: ../third_party/xscreensaver/hacks/xlockmore.c
+        - file: ../third_party/xscreensaver/hacks/analogtv.c
+        - file: ../third_party/xscreensaver/hacks/apple2.c
+        - file: ../third_party/xscreensaver/hacks/pacman_ai.c
+        - file: ../third_party/xscreensaver/hacks/pacman_level.c
+        - file: ../third_party/xscreensaver/hacks/asm6502.c
+        - file: ../third_party/xscreensaver/hacks/delaunay.c
+        - file: ../third_party/xscreensaver/hacks/ansi-tty.c
+        - file: ../third_party/xscreensaver/hacks/bubbles-default.c
+        - file: ../third_party/xscreensaver/utils/hsv.c
+        - file: ../third_party/xscreensaver/utils/colors.c
+        - file: ../third_party/xscreensaver/utils/spline.c
+        - file: ../third_party/xscreensaver/utils/erase.c
+        - file: ../third_party/xscreensaver/utils/xshm.c
+        - file: ../third_party/xscreensaver/utils/xdbe.c
+        - file: ../third_party/xscreensaver/utils/aligned_malloc.c
+        - file: ../third_party/xscreensaver/utils/thread_util.c
+        - file: ../third_party/xscreensaver/utils/pow2.c
+        - file: ../third_party/xscreensaver/utils/xft.c
+        - file: ../third_party/xscreensaver/utils/xftwrap.c
+        - file: ../third_party/xscreensaver/utils/utf8wc.c
+        - file: ../third_party/xscreensaver/utils/font-retry.c
+        - file: ../third_party/xscreensaver/utils/easing.c
+        - file: ../third_party/xscreensaver/utils/doubletime.c
+        - file: ./xs_port/assets.c
+        - file: ./xs_port/board_io.c
+        - file: ./xs_port/drawing.c
+        - file: ./xs_port/font.c
+        - file: ./xs_port/gallery.c
+        - file: ./xs_port/local_savers.c
+        - file: ./xs_port/memory.c
+        - file: ./xs_port/picture.c
+        - file: ./xs_port/platform.c
+        - file: ./xs_port/registry.c
 
   # List components to use for your application.
   # A software component is a re-usable unit that may be configurable.
@@ -29,10 +216,9 @@ project:
     - component: Device:SOC Peripherals:MHU
     - component: CMSIS-Compiler:CORE
 
-  # List executable file formats to be generated.
+  # Combined HEX programs both MRAM regions. A raw BIN requires multiple files.
   output:
     type:
       - elf
-      - bin
       - hex
       - map

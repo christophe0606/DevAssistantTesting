@@ -52,7 +52,7 @@
 // =======================
 //   <q>Combine SRAM0 & SRAM1
 //   <i> Combines SRAM0 and SRAM1 into single memory region
-#define SRAM0_SRAM1_COMBINED        1
+#define SRAM0_SRAM1_COMBINED        0
 // <h> SRAM
 //   <o> Base address <0x02000000-0x027FFFFF:8>
 //   <i> Defines base address of SRAM memory region.
@@ -82,10 +82,10 @@
 // </h>
 
 // <h> SRAM1
-//   <o> Base address <0x02400000-0x027FFFFF:8>
+//   <o> Base address <0x08000000-0x083FFFFF:8>
 //   <i> Defines base address of SRAM1 memory region.
-//   <i> Default: 0x02400000
-#define APP_SRAM1_BASE         0x02400000
+//   <i> Default: 0x08000000
+#define APP_SRAM1_BASE         0x08000000
 //   <o> Region size [bytes] <0x0-0x00400000:8>
 //   <i> Defines size of SRAM1 memory region.
 //   <i> Default: 0x00400000
@@ -165,7 +165,7 @@
 // <h>RTSS HP
 //   <o0> Stack Size (in Bytes) <0x0-0x400000:8>
 //   <o1> Heap Size (in Bytes) <0x0-0x400000:8>
-#define APP_HP_STACK_SIZE      0x00002000
+#define APP_HP_STACK_SIZE      0x00010000
 #define APP_HP_HEAP_SIZE       0x00004000
 // </h>
 

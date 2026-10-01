@@ -81,25 +81,23 @@ LR_ROM __ROM_BASE NOCOMPRESS __ROM_SIZE  {    ; load region size_region
   ARM_LIB_STACK __STACK_TOP EMPTY -__STACK_SIZE {   ; Reserve empty region for stack
   }
 
-  MRAM_USER  APP_MRAM_USER_BASE  APP_MRAM_USER_SIZE  {
-   * (.mram_user)
-   * (.mram_user_bss)
-  }
-
 #if (SRAM0_SRAM1_COMBINED == 1)
-  RW_SRAM APP_SRAM_BASE APP_SRAM_SIZE  {  ; Update sections as needed
+  ; SRAM1 is powered by main before the gallery initializes these buffers.
+  ; Do not touch the bulk SRAM during C runtime scatter-load initialization.
+  RW_SRAM APP_SRAM_BASE UNINIT APP_SRAM_SIZE  {
    * (.bss.lcd_crop_and_interpolate_buf)  ; LCD crop and interpolate image processing buffer.
    * (.bss.lcd_frame_buf)                 ; LCD frame Buffer.
    * (.bss.camera_frame_buf)              ; Camera Frame Buffer
    * (.bss.camera_frame_bayer_to_rgb_buf) ; (Optional) Camera Frame Buffer for Bayer to RGB Conversion.
   }
 #else
-  RW_SRAM0 APP_SRAM0_BASE APP_SRAM0_SIZE  {  ; Update sections as needed
+  RW_SRAM0 APP_SRAM0_BASE UNINIT APP_SRAM0_SIZE  {
    * (.bss.lcd_crop_and_interpolate_buf)  ; LCD crop and interpolate image processing buffer.
    * (.bss.lcd_frame_buf)                 ; LCD frame Buffer.
    * (.bss.camera_frame_buf)              ; Camera Frame Buffer
    * (.bss.camera_frame_bayer_to_rgb_buf) ; (Optional) Camera Frame Buffer for Bayer to RGB Conversion.
    * (.data.audio_samples)                ; Audio sample data
+   * (.bss.xs_arena0)
   }
 
   /*
@@ -109,12 +107,16 @@ LR_ROM __ROM_BASE NOCOMPRESS __ROM_SIZE  {    ; load region size_region
    * power for these regions before adding contents.
    */
 
-  RW_SRAM1 APP_SRAM1_BASE APP_SRAM1_SIZE  {  ; Update sections as needed
-
+  RW_SRAM1 APP_SRAM1_BASE UNINIT APP_SRAM1_SIZE  {
+   * (.bss.xs_arena1)
   }
 
 #endif
-  PADDING +0 OVERLAY ALIGN 16 FILL 0 16
-  {
+}
+
+; Read-only image assets execute directly from their own MRAM load region.
+LR_ASSETS APP_MRAM_USER_BASE NOCOMPRESS APP_MRAM_USER_SIZE {
+  MRAM_USER APP_MRAM_USER_BASE APP_MRAM_USER_SIZE {
+    * (.mram_user)
   }
 }
