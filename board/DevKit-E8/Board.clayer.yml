@@ -1,0 +1,43 @@
+layer:
+  type: Board
+  description: Existing E8 RGB565 display, joystick and Ethos-U85 on M55_HP
+  for-board: Alif Semiconductor::DevKit-E8
+  device: :M55_HP
+  processor:
+    trustzone: off
+  define:
+    - ETHOSU85
+  add-path:
+    - ./RTE/Device/AE822FA0E5597LS0_M55_HP
+    - ./RTE/BSP/AE822FA0E5597LS0_M55_HP
+    - ../../M55_HP
+  components:
+    - component: Device:SOC Peripherals:GPIO
+    - component: Device:SOC Peripherals:CDC
+    - component: Device:SOC Peripherals:MIPI DSI
+    - component: Device:SOC Peripherals:MIPI DSI CSI2 DPHY
+    - component: BSP:External peripherals:ILI9806E LCD panel
+    - component: CMSIS:CORE
+    - component: Device:SOC Peripherals:PINCONF
+    - component: Device:Startup
+    - component: BSP:DevKit Config&DevKit-e8
+    - component: BSP:Board Config
+    - component: Services:Secure Enclave:Initialization Helper&Source
+    - component: Services:Secure Enclave:core&Source
+    - component: Device:SOC Peripherals:MHU
+    - component: CMSIS-Compiler:CORE
+    - component: CMSIS-Compiler:STDIN:Custom
+    - component: CMSIS-Compiler:STDOUT:Custom
+    - component: CMSIS-Compiler:STDERR:Custom
+    - component: CMSIS-Compiler:TTY:Custom
+    - component: Machine Learning:NPU Support:Ethos-U Driver&Generic U85
+  groups:
+    - group: E8 board
+      files:
+        - file: ../../M55_HP/main.c
+        - file: ./ethos_support.c
+        - file: ./stdio_support.c
+  linker:
+    - script: ./RTE/Device/AE822FA0E5597LS0_M55_HP/linker_ac6_mram.sct.src
+      for-compiler: AC6
+    - regions: ./RTE/Device/AE822FA0E5597LS0_M55_HP/app_mem_regions.h

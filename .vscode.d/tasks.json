@@ -1,110 +1,164 @@
-{
-    "version": "2.0.0",
-    "inputs": [
-        {
-            "id": "discoverCOM",
-            "type": "pickString",
-            "description": "Select COM Port for SETOOLS?",
-            "options": [
-                {
-                    "label": "Yes - Enable COM Port Discovery using command option",
-                    "value": "-d"
-                },
-                {
-                    "label": "No - COM port is already selected",
-                    "value": ""
-                }
-            ],
-            "default": ""
-        }
-    ],
-    "tasks": [
-        {
-            "label": "Alif: Install M55_HE or M55_HP debug stubs (single core configuration)",
-            "type": "shell",
-            "command": [
-                "cp './.alif/M55_HE_mram_cfg.json' '${config:alif.setools.root}/build/config/M55_HE_mram_cfg.json';",
-                "cp './.alif/M55_HP_mram_cfg.json' '${config:alif.setools.root}/build/config/M55_HP_mram_cfg.json';",
-                "cp './.alif/M55_HP_mram_stub.bin' '${config:alif.setools.root}/build/images/M55_HP_mram_stub.bin';",
-                "cp './.alif/M55_HE_mram_stub.bin' '${config:alif.setools.root}/build/images/M55_HE_mram_stub.bin';",
-                "cd '${config:alif.setools.root}';",
-                "./app-gen-toc -f 'build/config/${command:cmsis-csolution.getProcessorName}_mram_cfg.json';",
-                "./app-write-mram -p ${input:discoverCOM};"
-            ],
-            "windows": {
-                "options": {
-                    "shell": {
-                        "executable": "powershell.exe",
-                        "args": [
-                            "-Command"
-                        ]
-                    }
-                }
-            },
-            "linux": {
-                "options": {
-                    "shell": {
-                        "executable": "/bin/bash",
-                        "args": [
-                            "-c"
-                        ]
-                    }
-                }
-            },
-            "osx": {
-                "options": {
-                    "shell": {
-                        "executable": "/bin/bash",
-                        "args": [
-                            "-c"
-                        ]
-                    }
-                }
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Alif: Install M55_HE and M55_HP debug stubs (dual core configuration)",
-            "type": "shell",
-            "command": [
-                "cp './.alif/M55_HP_HE_mram_cfg.json' '${config:alif.setools.root}/build/config/M55_HP_HE_mram_cfg.json';",
-                "cp './.alif/M55_HP_mram_stub.bin' '${config:alif.setools.root}/build/images/M55_HP_mram_stub.bin';",
-                "cp './.alif/M55_HE_mram_stub.bin' '${config:alif.setools.root}/build/images/M55_HE_mram_stub.bin';",
-                "cd '${config:alif.setools.root}';",
-                "./app-gen-toc -f 'build/config/M55_HP_HE_mram_cfg.json';",
-                "./app-write-mram -p ${input:discoverCOM};"
-            ],
-            "windows": {
-                "options": {
-                    "shell": {
-                        "executable": "powershell.exe",
-                        "args": [
-                            "-Command"
-                        ]
-                    }
-                }
-            },
-            "linux": {
-                "options": {
-                    "shell": {
-                        "executable": "/bin/bash",
-                        "args": [
-                            "-c"
-                        ]
-                    }
-                }
-            },
-            "osx": {
-                "options": {
-                    "shell": {
-                        "executable": "/bin/bash",
-                        "args": [
-                            "-c"
-                        ]
-                    }
-                }
-            },
-            "problemMatcher": []
-        }
-    ]
+﻿{
+    "version":  "2.0.0",
+    "inputs":  [
+                   {
+                       "id":  "discoverCOM",
+                       "type":  "pickString",
+                       "description":  "Select COM Port for SETOOLS?",
+                       "options":  [
+                                       {
+                                           "label":  "Yes - Enable COM Port Discovery using command option",
+                                           "value":  "-d"
+                                       },
+                                       {
+                                           "label":  "No - COM port is already selected",
+                                           "value":  ""
+                                       }
+                                   ],
+                       "default":  ""
+                   }
+               ],
+    "tasks":  [
+                  {
+                      "label":  "Alif: Install M55_HE or M55_HP debug stubs (single core configuration)",
+                      "type":  "shell",
+                      "command":  [
+                                      "cp \u0027./.alif/M55_HE_mram_cfg.json\u0027 \u0027${config:alif.setools.root}/build/config/M55_HE_mram_cfg.json\u0027;",
+                                      "cp \u0027./.alif/M55_HP_mram_cfg.json\u0027 \u0027${config:alif.setools.root}/build/config/M55_HP_mram_cfg.json\u0027;",
+                                      "cp \u0027./.alif/M55_HP_mram_stub.bin\u0027 \u0027${config:alif.setools.root}/build/images/M55_HP_mram_stub.bin\u0027;",
+                                      "cp \u0027./.alif/M55_HE_mram_stub.bin\u0027 \u0027${config:alif.setools.root}/build/images/M55_HE_mram_stub.bin\u0027;",
+                                      "cd \u0027${config:alif.setools.root}\u0027;",
+                                      "./app-gen-toc -f \u0027build/config/${command:cmsis-csolution.getProcessorName}_mram_cfg.json\u0027;",
+                                      "./app-write-mram -p ${input:discoverCOM};"
+                                  ],
+                      "windows":  {
+                                      "options":  {
+                                                      "shell":  {
+                                                                    "executable":  "powershell.exe",
+                                                                    "args":  [
+                                                                                 "-Command"
+                                                                             ]
+                                                                }
+                                                  }
+                                  },
+                      "linux":  {
+                                    "options":  {
+                                                    "shell":  {
+                                                                  "executable":  "/bin/bash",
+                                                                  "args":  [
+                                                                               "-c"
+                                                                           ]
+                                                              }
+                                                }
+                                },
+                      "osx":  {
+                                  "options":  {
+                                                  "shell":  {
+                                                                "executable":  "/bin/bash",
+                                                                "args":  [
+                                                                             "-c"
+                                                                         ]
+                                                            }
+                                              }
+                              },
+                      "problemMatcher":  [
+
+                                         ]
+                  },
+                  {
+                      "label":  "Alif: Install M55_HE and M55_HP debug stubs (dual core configuration)",
+                      "type":  "shell",
+                      "command":  [
+                                      "cp \u0027./.alif/M55_HP_HE_mram_cfg.json\u0027 \u0027${config:alif.setools.root}/build/config/M55_HP_HE_mram_cfg.json\u0027;",
+                                      "cp \u0027./.alif/M55_HP_mram_stub.bin\u0027 \u0027${config:alif.setools.root}/build/images/M55_HP_mram_stub.bin\u0027;",
+                                      "cp \u0027./.alif/M55_HE_mram_stub.bin\u0027 \u0027${config:alif.setools.root}/build/images/M55_HE_mram_stub.bin\u0027;",
+                                      "cd \u0027${config:alif.setools.root}\u0027;",
+                                      "./app-gen-toc -f \u0027build/config/M55_HP_HE_mram_cfg.json\u0027;",
+                                      "./app-write-mram -p ${input:discoverCOM};"
+                                  ],
+                      "windows":  {
+                                      "options":  {
+                                                      "shell":  {
+                                                                    "executable":  "powershell.exe",
+                                                                    "args":  [
+                                                                                 "-Command"
+                                                                             ]
+                                                                }
+                                                  }
+                                  },
+                      "linux":  {
+                                    "options":  {
+                                                    "shell":  {
+                                                                  "executable":  "/bin/bash",
+                                                                  "args":  [
+                                                                               "-c"
+                                                                           ]
+                                                              }
+                                                }
+                                },
+                      "osx":  {
+                                  "options":  {
+                                                  "shell":  {
+                                                                "executable":  "/bin/bash",
+                                                                "args":  [
+                                                                             "-c"
+                                                                         ]
+                                                            }
+                                              }
+                              },
+                      "problemMatcher":  [
+
+                                         ]
+                  },
+                  {
+                      "label":  "SDF: Setup Python 3.12 with uv",
+                      "type":  "process",
+                      "command":  "powershell.exe",
+                      "args":  [
+                                   "-NoProfile",
+                                   "-File",
+                                   "${workspaceFolder}/setup_venv.ps1"
+                               ],
+                      "problemMatcher":  [
+
+                                         ]
+                  },
+                  {
+                      "label":  "SDF: Create AI layer",
+                      "type":  "process",
+                      "command":  "uv",
+                      "args":  [
+                                   "run",
+                                   "--active",
+                                   "--no-project",
+                                   "python",
+                                   "create_ai_layer.py",
+                                   "Blinky.cbuild-mlops.yml"
+                               ],
+                      "options":  {
+                                      "cwd":  "${workspaceFolder}"
+                                  },
+                      "problemMatcher":  [
+
+                                         ]
+                  },
+                  {
+                      "label":  "SDF: Verify tiles",
+                      "type":  "process",
+                      "command":  "uv",
+                      "args":  [
+                                   "run",
+                                   "--active",
+                                   "--no-project",
+                                   "python",
+                                   "tests/test_tiles.py"
+                               ],
+                      "options":  {
+                                      "cwd":  "${workspaceFolder}"
+                                  },
+                      "problemMatcher":  [
+
+                                         ]
+                  }
+              ]
 }

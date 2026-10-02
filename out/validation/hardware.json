@@ -1,0 +1,38 @@
+{
+  "target": "DevKit-E8 M55_HP / Ethos-U85-256",
+  "build": "b-14 Release",
+  "pte_bytes": 1920764,
+  "display": [480, 800],
+  "logical_image": [480, 800],
+  "rotation_degrees": 0,
+  "output_tile": [80, 8],
+  "time": 0,
+  "animate": false,
+  "half": {
+    "native_tile": [42, 6],
+    "tiles": 600,
+    "model_calls": 50262,
+    "npu_interrupts": 50262,
+    "march_calls": 20588,
+    "shadow_calls": 25288,
+    "render_ms": 112000,
+    "inference_ms": 93239,
+    "application_error": 0,
+    "model_error": 0,
+    "frame_submitted_to_display": true
+  },
+  "full": {
+    "native_tile": [80, 8],
+    "tiles": 600,
+    "model_calls": 49150,
+    "npu_interrupts": 49150,
+    "march_calls": 20334,
+    "shadow_calls": 25039,
+    "render_ms": 196540,
+    "inference_ms": 172471,
+    "application_error": 0,
+    "model_error": 0,
+    "frame_submitted_to_display": true
+  },
+  "timing_notes": "Firmware SysTick timing; display waiting excluded. Model time includes method loading/switching, IO quantize/dequantize, and NPU execution. CPU debugger halts do not advance SysTick."
+}

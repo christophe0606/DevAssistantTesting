@@ -6,6 +6,15 @@ cbuild-pack:
     - resolved-pack: ARM::CMSIS-Compiler@2.3.0
       selected-by-pack:
         - ARM::CMSIS-Compiler@^2.1.0
+    - resolved-pack: ARM::CMSIS-NN@8.0.0
+      selected-by-pack:
+        - ARM::CMSIS-NN
+    - resolved-pack: ARM::ethos-u-core-driver@1.26.5
+      selected-by-pack:
+        - ARM::ethos-u-core-driver@1.26.5
     - resolved-pack: AlifSemiconductor::Ensemble@2.2.1
       selected-by-pack:
         - AlifSemiconductor::Ensemble@^2.2.0-0
+    - resolved-pack: PyTorch::ExecuTorch@1.4.1
+      selected-by-pack:
+        - PyTorch::ExecuTorch@1.4.1

@@ -84,6 +84,12 @@ tools-environment.yml
 **/.vscode/settings.json
 .cmd.jlink
 
+.venv/
+.codex/
+*.cbuild-mlops.yml
+**/RTE/Device/*/ac6_linker_script.sct.src
+ai_layer/*.pte
+
 # Exception for line 2: "*.d"
 # CMSIS Solution drop-ins are user managed source files, despite the directory suffix ".d" 
 !.vscode.d/
@@ -97,4 +103,3 @@ tools-environment.yml
 # FVP model generated files when using with SDS
 **/__pycache__/
 sdsio.log
-

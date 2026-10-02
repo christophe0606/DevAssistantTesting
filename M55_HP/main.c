@@ -1,10 +1,12 @@
 /* Copyright (C) 2023 Alif Semiconductor - All Rights Reserved.
  * Use, distribution and modification permitted under the Alif Semiconductor
  * Software License Agreement: https://alifsemi.com/license
- * Joystick Pac-Man for the DevKit-E8 standard MIPI LCD.
+ * Signed-distance shader for the DevKit-E8 standard MIPI LCD.
  */
-#include "pacman.h"
+#include "sdf_renderer.h"
+#include "model_io.h"
 #include <stdint.h>
+#include <string.h>
 #include <RTE_Components.h>
 #include CMSIS_device_header
 #include "RTE_Device.h"
@@ -21,8 +23,8 @@
 #if RTE_CDC200_PIXEL_FORMAT != 2
 #error "This renderer requires RGB565 (RTE_CDC200_PIXEL_FORMAT = 2)"
 #endif
-_Static_assert(LCD_WIDTH == GAME_LCD_WIDTH && LCD_HEIGHT == GAME_LCD_HEIGHT,
-               "Pac-Man UI requires the standard 480 x 800 LCD");
+_Static_assert(LCD_WIDTH == SDF_DISPLAY_WIDTH && LCD_HEIGHT == SDF_DISPLAY_HEIGHT,
+               "Model configuration must match the LCD");
 
 /* Bulk SRAM is accessible to CDC DMA; DTCM holds normal data and stack. */
 static uint16_t framebuffers[2][LCD_HEIGHT][LCD_WIDTH]
@@ -88,7 +90,6 @@ static const uint8_t joystick_pins[5] = {
     BOARD_JOY_SW_B_GPIO_PIN, BOARD_JOY_SW_C_GPIO_PIN,
     BOARD_JOY_SW_CENTER_GPIO_PIN
 };
-Pacman game;
 volatile uint32_t joystick_raw;
 volatile uint32_t joystick_keys;
 static uint32_t input_at, candidate_at, candidate_keys;
@@ -106,7 +107,9 @@ static void joystick_init(void)
     }
 }
 
-static void service_input(void)
+uint32_t board_millis(void) { return ms_ticks; }
+
+void board_service_input(void)
 {
     uint32_t now = ms_ticks;
     if (now - input_at < 5U) return;
@@ -119,8 +122,13 @@ static void service_input(void)
     }
     joystick_raw = raw;
     if (raw != candidate_keys) { candidate_keys = raw; candidate_at = now; }
-    if (now - candidate_at >= 20U) joystick_keys = candidate_keys;
-    pacman_update(&game, now, joystick_keys);
+    if (now - candidate_at >= 20U && joystick_keys != candidate_keys) {
+        uint32_t pressed = candidate_keys & ~joystick_keys;
+        joystick_keys = candidate_keys;
+        if (pressed & 1U) sdf_half_resolution = 1U;
+        if (pressed & 2U) sdf_half_resolution = 0U;
+        if (pressed & 16U) sdf_animate ^= 1U;
+    }
 }
 static void present(uint32_t index)
 {
@@ -135,7 +143,7 @@ static void present(uint32_t index)
         if (display_events != 0U || (uint32_t)(ms_ticks - started) > 250U) {
             fail(ARM_DRIVER_ERROR_TIMEOUT);
         }
-        service_input();
+        board_service_input();
         __WFI();
     }
     ++frames_presented;
@@ -166,7 +174,7 @@ int main(void)
     status = SERVICES_get_run_cfg(se_services_s_handle, &profile, &service_error);
     check_service(status, service_error);
     /* Preserve existing power requests while adding display resources. */
-    profile.memory_blocks |= MRAM_MASK | SRAM0_MASK;
+    profile.memory_blocks |= MRAM_MASK | SRAM0_MASK | SRAM1_MASK;
     profile.phy_pwr_gating |= MIPI_PLL_DPHY_MASK | MIPI_TX_DPHY_MASK |
                              MIPI_RX_DPHY_MASK | LDO_PHY_MASK;
     status = SERVICES_set_run_cfg(se_services_s_handle, &profile, &service_error);
@@ -174,9 +182,13 @@ int main(void)
 
     app_stage = 3U;
     joystick_init();
-    pacman_init(&game, ms_ticks);
+    extern int ethos_setup(void);
+    int error = ethos_setup();
+    if (error) fail(error);
+    error = sdf_init();
+    if (error) fail(error);
     for (uint32_t i = 0; i < 2U; ++i) {
-        pacman_render(&framebuffers[i][0][0], &game);
+        memset(framebuffers[i], 0, sizeof(framebuffers[i]));
         clean_frame(i);
     }
     app_stage = 4U;
@@ -198,13 +210,16 @@ int main(void)
         if (display_events != 0U) {
             fail(ARM_DRIVER_ERROR);
         }
-        service_input();
-        pacman_render(&framebuffers[back][0][0], &game);
+        board_service_input();
+        const uint32_t half = sdf_half_resolution;
+        error = sdf_render(&framebuffers[back][0][0], sdf_time, half);
+        if (error) fail(error);
+        if (sdf_animate) sdf_time += (ms_ticks - frame_start) * 0.001f;
         clean_frame(back);
         present(back);
         back ^= 1U;
         while ((uint32_t)(ms_ticks - frame_start) < FRAME_MS) {
-            service_input();
+            board_service_input();
             __WFI();
         }
     }

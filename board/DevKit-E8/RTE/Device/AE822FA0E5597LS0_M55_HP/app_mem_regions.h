@@ -30,7 +30,7 @@
 //   <o> RTSS HP Region size [bytes] <0x0-0x00580000:8>
 //   <i> Defines size of RTSS HP application memory region.
 //   <i> Default: 0x00200000
-#define APP_MRAM_HP_SIZE       0x00200000
+#define APP_MRAM_HP_SIZE       0x00300000
 // </h>
 
 // <h>MRAM User Configuration
@@ -38,11 +38,11 @@
 // <h> MRAM User Region
 //   <o> User Base address <0x80000000-0x8057FFFF:8>
 //   <i> Defines base address of MRAM user region
-#define APP_MRAM_USER_BASE   0x80400000
+#define APP_MRAM_USER_BASE   0x80500000
 
 //   <o> User Region size [bytes] <0x0-0x00580000:8>
 //   <i> Defines size of MRAM user region
-#define APP_MRAM_USER_SIZE    0x00180000   // 1.5 MB
+#define APP_MRAM_USER_SIZE    0x00080000   // 512 KiB; HP code/model uses 3 MiB
 
 // Application executable MRAM region (before USER area)
 #define APP_CODE_MRAM_SIZE  (APP_MRAM_USER_BASE - APP_MRAM_HP_BASE)
@@ -52,7 +52,7 @@
 // =======================
 //   <q>Combine SRAM0 & SRAM1
 //   <i> Combines SRAM0 and SRAM1 into single memory region
-#define SRAM0_SRAM1_COMBINED        1
+#define SRAM0_SRAM1_COMBINED        0
 // <h> SRAM
 //   <o> Base address <0x02000000-0x027FFFFF:8>
 //   <i> Defines base address of SRAM memory region.
@@ -82,10 +82,10 @@
 // </h>
 
 // <h> SRAM1
-//   <o> Base address <0x02400000-0x027FFFFF:8>
+//   <o> Base address <0x08000000-0x083FFFFF:8>
 //   <i> Defines base address of SRAM1 memory region.
-//   <i> Default: 0x02400000
-#define APP_SRAM1_BASE         0x02400000
+//   <i> Default: 0x08000000 (SOC_FEAT_BULK_SRAM1_BASE)
+#define APP_SRAM1_BASE         0x08000000
 //   <o> Region size [bytes] <0x0-0x00400000:8>
 //   <i> Defines size of SRAM1 memory region.
 //   <i> Default: 0x00400000
@@ -165,8 +165,8 @@
 // <h>RTSS HP
 //   <o0> Stack Size (in Bytes) <0x0-0x400000:8>
 //   <o1> Heap Size (in Bytes) <0x0-0x400000:8>
-#define APP_HP_STACK_SIZE      0x00002000
-#define APP_HP_HEAP_SIZE       0x00004000
+#define APP_HP_STACK_SIZE      0x00008000
+#define APP_HP_HEAP_SIZE       0x00018000
 // </h>
 
 // </h>

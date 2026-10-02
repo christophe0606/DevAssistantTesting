@@ -1,0 +1,127 @@
+{
+  "methods": {
+    "ao_full": {
+      "planned_bytes": 38400,
+      "delegate_scratch_bytes": [
+        779520
+      ],
+      "validated_delegate_io": 2,
+      "cpu_operator_types": {
+        "quantized_decomposed::dequantize_per_tensor.out": 1,
+        "quantized_decomposed::quantize_per_tensor.out": 1
+      }
+    },
+    "ao_half": {
+      "planned_bytes": 15136,
+      "delegate_scratch_bytes": [
+        306976
+      ],
+      "validated_delegate_io": 2,
+      "cpu_operator_types": {
+        "quantized_decomposed::dequantize_per_tensor.out": 1,
+        "quantized_decomposed::quantize_per_tensor.out": 1
+      }
+    },
+    "march_full": {
+      "planned_bytes": 38400,
+      "delegate_scratch_bytes": [
+        1987840
+      ],
+      "validated_delegate_io": 2,
+      "cpu_operator_types": {
+        "quantized_decomposed::dequantize_per_tensor.out": 1,
+        "quantized_decomposed::quantize_per_tensor.out": 1
+      }
+    },
+    "march_half": {
+      "planned_bytes": 15136,
+      "delegate_scratch_bytes": [
+        779696
+      ],
+      "validated_delegate_io": 2,
+      "cpu_operator_types": {
+        "quantized_decomposed::dequantize_per_tensor.out": 1,
+        "quantized_decomposed::quantize_per_tensor.out": 1
+      }
+    },
+    "normals_full": {
+      "planned_bytes": 11520,
+      "delegate_scratch_bytes": [
+        2570240
+      ],
+      "validated_delegate_io": 2,
+      "cpu_operator_types": {
+        "quantized_decomposed::dequantize_per_tensor.out": 1,
+        "quantized_decomposed::quantize_per_tensor.out": 1
+      }
+    },
+    "normals_half": {
+      "planned_bytes": 4544,
+      "delegate_scratch_bytes": [
+        1012032
+      ],
+      "validated_delegate_io": 2,
+      "cpu_operator_types": {
+        "quantized_decomposed::dequantize_per_tensor.out": 1,
+        "quantized_decomposed::quantize_per_tensor.out": 1
+      }
+    },
+    "shade_full": {
+      "planned_bytes": 23040,
+      "delegate_scratch_bytes": [
+        268800
+      ],
+      "validated_delegate_io": 2,
+      "cpu_operator_types": {
+        "quantized_decomposed::dequantize_per_tensor.out": 1,
+        "quantized_decomposed::quantize_per_tensor.out": 1
+      }
+    },
+    "shade_half": {
+      "planned_bytes": 9088,
+      "delegate_scratch_bytes": [
+        113952
+      ],
+      "validated_delegate_io": 2,
+      "cpu_operator_types": {
+        "quantized_decomposed::dequantize_per_tensor.out": 1,
+        "quantized_decomposed::quantize_per_tensor.out": 1
+      }
+    },
+    "shadow_full": {
+      "planned_bytes": 38400,
+      "delegate_scratch_bytes": [
+        746240
+      ],
+      "validated_delegate_io": 2,
+      "cpu_operator_types": {
+        "quantized_decomposed::dequantize_per_tensor.out": 1,
+        "quantized_decomposed::quantize_per_tensor.out": 1
+      }
+    },
+    "shadow_half": {
+      "planned_bytes": 15136,
+      "delegate_scratch_bytes": [
+        293856
+      ],
+      "validated_delegate_io": 2,
+      "cpu_operator_types": {
+        "quantized_decomposed::dequantize_per_tensor.out": 1,
+        "quantized_decomposed::quantize_per_tensor.out": 1
+      }
+    },
+    "upscale": {
+      "planned_bytes": 15136,
+      "delegate_scratch_bytes": [
+        3792
+      ],
+      "validated_delegate_io": 2,
+      "cpu_operator_types": {
+        "quantized_decomposed::dequantize_per_tensor.out": 1,
+        "quantized_decomposed::quantize_per_tensor.out": 1
+      }
+    }
+  },
+  "planned_arena_bytes": 38400,
+  "temp_arena_bytes": 3094528
+}

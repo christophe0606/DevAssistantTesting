@@ -1,38 +1,20 @@
-# A project translates into one executable or library.
 project:
   device: :M55_HP
-
+  misc:
+    - CPP:
+        - -std=gnu++17
+        - -Wno-deprecated-declarations
   groups:
-    - group: Source Files
+    - group: SDF renderer
       files:
-        - file: ./main.c
-        - file: ./pacman.c
-        - file: ./pacman.h
-        - file: ./pacman_ui.c
-        - file: ./app_utils.h
-
-  # List components to use for your application.
-  # A software component is a re-usable unit that may be configurable.
-  components:
-    - component: Device:SOC Peripherals:GPIO
-    - component: Device:SOC Peripherals:CDC
-    - component: Device:SOC Peripherals:MIPI DSI
-    - component: Device:SOC Peripherals:MIPI DSI CSI2 DPHY
-    - component: BSP:External peripherals:ILI9806E LCD panel
-    - component: CMSIS:CORE
-    - component: Device:SOC Peripherals:PINCONF
-    - component: Device:Startup
-    - component: BSP:DevKit Config&DevKit-e8
-    - component: BSP:Board Config
-    - component: Services:Secure Enclave:Initialization Helper&Source
-    - component: Services:Secure Enclave:core&Source
-    - component: Device:SOC Peripherals:MHU
-    - component: CMSIS-Compiler:CORE
-
-  # List executable file formats to be generated.
+        - file: ./sdf_renderer.cpp
+        - file: ./sdf_renderer.h
+        - file: ./model_runtime.cpp
+        - file: ./model_runtime.h
+  layers:
+    - layer: $Board-Layer$
+      type: Board
+    - layer: $AI-Layer$
+      type: AI
   output:
-    type:
-      - elf
-      - bin
-      - hex
-      - map
+    type: [elf, bin, hex, map]

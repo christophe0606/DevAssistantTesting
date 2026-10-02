@@ -1,0 +1,8 @@
+{
+  "display_width": 480,
+  "display_height": 800,
+  "rotation_degrees": 90,
+  "tile_width": 80,
+  "tile_height": 8,
+  "normal_epsilon": 0.0005
+}

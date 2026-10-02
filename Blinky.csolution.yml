@@ -1,6 +1,6 @@
 # A solution is a collection of related projects that share same base configuration.
 solution:
-  created-for: CMSIS-Toolbox@2.12.0
+  created-for: CMSIS-Toolbox@2.14.1
   cdefault: # use CMSIS-Toolbox default Compiler options
 
   # Compilers that can be selected.
@@ -14,6 +14,9 @@ solution:
     - pack: AlifSemiconductor::Ensemble@^2.2.0-0
     - pack: ARM::CMSIS@^6.2.0
     - pack: ARM::CMSIS-Compiler@^2.1.0
+    - pack: PyTorch::ExecuTorch@1.4.1
+    - pack: ARM::CMSIS-NN
+    - pack: ARM::ethos-u-core-driver@1.26.5
 
   # List different hardware targets that are used to deploy the solution.
   target-types:
@@ -21,6 +24,9 @@ solution:
     - type: DevKit-E8
       board: DevKit-E8
       device: AE822FA0E5597LS0
+      variables:
+        - Board-Layer: $SolutionDir()$/board/DevKit-E8/Board.clayer.yml
+        - AI-Layer: $SolutionDir()$/ai_layer/ai_layer.clayer.yml
       target-set:
         - set:
           images:
@@ -44,10 +50,13 @@ solution:
       optimize: none
 
     - type: Release
-      debug: off
+      debug: on
       optimize: speed
       misc:
-        - C-CPP:
+        - C:
+            - -O3
+            - -ffast-math
+          CPP:
             - -O3
             - -ffast-math
 
@@ -55,3 +64,15 @@ solution:
   projects:
     - project: M55_HP/M55_HP.cproject.yml
   compiler: AC6
+
+  mlops:
+    description: Recurrent image-wide signed-distance renderer
+    npu:
+      type: Ethos-U85
+      macs: 256
+    vela:
+      system: Ethos_U85_SRAM_MRAM
+      memory: Shared_Sram
+    model:
+      clayer: $AI-Layer$
+      name: SdfRenderer
