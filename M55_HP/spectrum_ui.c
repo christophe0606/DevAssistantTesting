@@ -2,6 +2,27 @@
 #include "arm_math.h"
 #include <math.h>
 #define RGB(r,g,b) ((uint16_t)(((r)>>3)<<11 | ((g)>>2)<<5 | ((b)>>3)))
+float spectrum_display_gain = 1.0f;
+
+bool spectrum_touch(unsigned x, unsigned y, bool new_contact)
+{
+    if (x >= SPECTRUM_WIDTH || y >= SPECTRUM_HEIGHT) return false;
+    if (x < SPECTRUM_PLOT_WIDTH) return new_contact;
+    if (y < SPECTRUM_SLIDER_TOP) y = SPECTRUM_SLIDER_TOP;
+    if (y > SPECTRUM_SLIDER_BOTTOM) y = SPECTRUM_SLIDER_BOTTOM;
+    spectrum_display_gain = 0.5f + 1.5f * (float)(SPECTRUM_SLIDER_BOTTOM - y) /
+                          (float)(SPECTRUM_SLIDER_BOTTOM - SPECTRUM_SLIDER_TOP);
+    return false;
+}
+
+static void rectangle(uint16_t *fb, unsigned x, unsigned y,
+                      unsigned width, unsigned height, uint16_t color)
+{
+    for (unsigned col = x; col < x + width; ++col)
+        arm_fill_q15((q15_t)color,
+                     (q15_t *)(fb + col * SPECTRUM_HEIGHT + SPECTRUM_HEIGHT - y - height),
+                     height);
+}
 
 /* Landscape coordinates map to the native portrait 480 x 800 buffer. */
 static void pixel(uint16_t *fb, unsigned x, unsigned y, uint16_t color)
@@ -49,10 +70,11 @@ void spectrum_render(uint16_t *fb, bool logarithmic)
     const unsigned plot_height = SPECTRUM_HEIGHT - SPECTRUM_STRIP;
     const unsigned green_limit = plot_height / 2U;
     const unsigned orange_limit = plot_height * 4U / 5U;
-    for (unsigned x = 0; x < SPECTRUM_WIDTH; ++x) {
-        /* Peak pooling retains narrow tones when 1025 bins map to 800 pixels. */
-        unsigned first = x * SPECTRUM_BINS / SPECTRUM_WIDTH;
-        unsigned end = (x+1U) * SPECTRUM_BINS / SPECTRUM_WIDTH;
+    const float gain = fminf(2.0f, fmaxf(0.5f, spectrum_display_gain));
+    for (unsigned x = 0; x < SPECTRUM_PLOT_WIDTH; ++x) {
+        /* Keep the entire frequency range in the width left of the slider. */
+        unsigned first = x * SPECTRUM_BINS / SPECTRUM_PLOT_WIDTH;
+        unsigned end = (x+1U) * SPECTRUM_BINS / SPECTRUM_PLOT_WIDTH;
         float a = 0.0f;
         for (unsigned bin = first; bin < end; ++bin)
             if (spectrum_magnitude[bin] > a) a = spectrum_magnitude[bin];
@@ -60,7 +82,7 @@ void spectrum_render(uint16_t *fb, bool logarithmic)
          * mode. Clip before converting to a height or filling the buffer. */
         float level = logarithmic ? (20.0f * log10f(fmaxf(a, 0.0001f)) + 80.0f) / 80.0f
                                   : a * SPECTRUM_LINEAR_GAIN;
-        level = fminf(1.0f, fmaxf(0.0f, level));
+        level = fminf(1.0f, fmaxf(0.0f, level * gain));
         unsigned height = (unsigned)(level * (float)plot_height);
         /* In portrait memory, each landscape column is contiguous. Use
          * optimized DSP fills so Debug's unoptimized UI stays within 50 ms. */
@@ -73,12 +95,20 @@ void spectrum_render(uint16_t *fb, bool logarithmic)
         arm_fill_q15((q15_t)RGB(3,7,15), column + height, plot_height - height);
         arm_fill_q15((q15_t)RGB(20,30,47), column + plot_height, SPECTRUM_STRIP);
     }
-    /* Frequency annotations share the existing 24-pixel strip; the plot
-     * still spans every frequency pixel and has no magnitude axes. */
+    /* Slider has a separate touch area, with no scale markings or value. */
+    rectangle(fb, SPECTRUM_PLOT_WIDTH, 0, SPECTRUM_SLIDER_WIDTH,
+              SPECTRUM_HEIGHT, RGB(20,30,47));
+    const unsigned slider_x = SPECTRUM_PLOT_WIDTH + SPECTRUM_SLIDER_WIDTH / 2U;
+    const unsigned slider_y = SPECTRUM_SLIDER_BOTTOM - (unsigned)
+        ((gain - 0.5f) / 1.5f * (SPECTRUM_SLIDER_BOTTOM - SPECTRUM_SLIDER_TOP));
+    rectangle(fb, slider_x - 2U, SPECTRUM_SLIDER_TOP, 4U,
+              SPECTRUM_SLIDER_BOTTOM - SPECTRUM_SLIDER_TOP + 1U, RGB(80,100,120));
+    rectangle(fb, slider_x - 16U, slider_y - 8U, 32U, 16U, RGB(225,240,255));
+    /* Frequency annotations share the existing strip; no magnitude axes. */
     label(fb, 0, "0HZ");
     label(fb, 80, logarithmic ? "LOG" : "LINEAR");
-    label(fb, 176, "6KHZ");
-    label(fb, 370, "12KHZ");
-    label(fb, 570, "18KHZ");
-    label(fb, 740, "24KHZ");
+    label(fb, SPECTRUM_PLOT_WIDTH / 4U - 24U, "6KHZ");
+    label(fb, SPECTRUM_PLOT_WIDTH / 2U - 30U, "12KHZ");
+    label(fb, SPECTRUM_PLOT_WIDTH * 3U / 4U - 30U, "18KHZ");
+    label(fb, SPECTRUM_PLOT_WIDTH - 60U, "24KHZ");
 }

@@ -220,7 +220,12 @@ static void service_input(void)
     /* GetState reports zero when no fresh interrupt is pending, including
      * during a held finger. Require a quiet interval before another toggle. */
     if (state.numtouches > 0) {
-        if (!touch_held) logarithmic ^= 1U;
+        /* Inverse of the renderer's portrait-to-landscape mapping. */
+        int32_t x = state.coordinates[0].y;
+        int32_t y = (int32_t)SPECTRUM_HEIGHT - 1 - state.coordinates[0].x;
+        if (x >= 0 && y >= 0 &&
+            spectrum_touch((unsigned)x, (unsigned)y, !touch_held))
+            logarithmic ^= 1U;
         touch_held = true;
         last_contact = now;
     } else if (now - last_contact >= 150U) touch_held = false;
