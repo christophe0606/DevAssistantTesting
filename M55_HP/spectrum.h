@@ -18,6 +18,8 @@ void spectrum_compute(const int16_t *pcm);
 void spectrum_render(uint16_t *framebuffer, bool logarithmic);
 /* Landscape touch coordinates. Returns true for a new plot tap (mode toggle). */
 bool spectrum_touch(unsigned x, unsigned y, bool new_contact);
+void spectrum_touch_release(void);
+void spectrum_ui_reset(void);
 extern float spectrum_display_gain;
 extern float spectrum_magnitude[SPECTRUM_BINS];
 extern volatile uint32_t spectrum_peak_hz;

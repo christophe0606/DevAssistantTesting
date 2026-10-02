@@ -228,7 +228,10 @@ static void service_input(void)
             logarithmic ^= 1U;
         touch_held = true;
         last_contact = now;
-    } else if (now - last_contact >= 150U) touch_held = false;
+    } else if (now - last_contact >= 150U) {
+        touch_held = false;
+        spectrum_touch_release();
+    }
 }
 static void present(uint32_t index)
 {

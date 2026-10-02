@@ -5,12 +5,11 @@
 #include <stdlib.h>
 #include <string.h>
 static int16_t pcm[SPECTRUM_FFT_SIZE];
-static uint16_t bar_color(unsigned from_bottom)
+static unsigned bar_height(const uint16_t *column)
 {
-    const unsigned plot_height = SPECTRUM_HEIGHT - SPECTRUM_STRIP;
-    if (from_bottom < plot_height / 2U) return 0x268A; /* green */
-    if (from_bottom < plot_height * 4U / 5U) return 0xFD00; /* orange */
-    return 0xF186; /* red */
+    unsigned height = 0;
+    while (height < SPECTRUM_HEIGHT-SPECTRUM_STRIP && column[height] != 0x0063) ++height;
+    return height;
 }
 static unsigned peak(void)
 {
@@ -48,12 +47,24 @@ int main(void)
         spectrum_magnitude[512] = mode ? 0.1f : 0.001f;
         spectrum_render(storage+1, mode != 0);
         unsigned column = (513 * SPECTRUM_PLOT_WIDTH + SPECTRUM_BINS - 1) / SPECTRUM_BINS - 1;
-        unsigned lit = 0;
-        for (unsigned y = SPECTRUM_STRIP; y < SPECTRUM_HEIGHT; ++y)
-            if (storage[1+column*SPECTRUM_HEIGHT+SPECTRUM_HEIGHT-1-y] ==
-                bar_color(SPECTRUM_HEIGHT-1-y)) ++lit;
+        unsigned lit = bar_height(storage+1+column*SPECTRUM_HEIGHT);
         assert(lit >= (mode ? 341U : 45U) && lit <= (mode ? 343U : 46U));
         assert(storage[0] == 0x1234 && storage[pixels+1] == 0x1234);
+        /* Richer UI-only previews include quiet/high peaks and release markers. */
+        spectrum_ui_reset();
+        for (unsigned frame = 0; frame < 2; ++frame) {
+            for (unsigned bin = 0; bin < SPECTRUM_BINS; ++bin) {
+                float b = (float)bin;
+                float level = 0.08f + 0.68f*expf(-powf((b-43.0f)/16.0f, 2.0f)) +
+                              0.82f*expf(-powf((b-260.0f)/45.0f, 2.0f)) +
+                              0.42f*expf(-powf((b-670.0f)/90.0f, 2.0f));
+                level *= 0.8f + 0.2f*sinf(b*0.23f);
+                if (frame) level *= 0.55f;
+                spectrum_magnitude[bin] = mode ? powf(10.0f, (level*80.0f-80.0f)/20.0f)
+                                               : level / SPECTRUM_LINEAR_GAIN;
+            }
+            spectrum_render(storage+1, mode != 0);
+        }
         FILE *f = fopen(mode ? "out/spectrum-log.ppm" : "out/spectrum-linear.ppm", "wb");
         assert(f);
         fprintf(f, "P6\n800 480\n255\n");
@@ -75,9 +86,11 @@ int main(void)
         spectrum_render(storage + 1, mode != 0);
         for (unsigned x = 0; x < SPECTRUM_PLOT_WIDTH; ++x) {
             for (unsigned y = SPECTRUM_STRIP; y < SPECTRUM_HEIGHT; ++y)
-                assert(storage[1+x*SPECTRUM_HEIGHT+SPECTRUM_HEIGHT-1-y] ==
-                       bar_color(SPECTRUM_HEIGHT-1-y));
-            assert(storage[1+x*SPECTRUM_HEIGHT+SPECTRUM_HEIGHT-SPECTRUM_STRIP] != 0xF186);
+                assert(storage[1+x*SPECTRUM_HEIGHT+SPECTRUM_HEIGHT-1-y] != 0x0063);
+            assert(storage[1+x*SPECTRUM_HEIGHT] == 0x3E51);
+            assert(storage[1+x*SPECTRUM_HEIGHT+280] == 0xF58A);
+            assert(storage[1+x*SPECTRUM_HEIGHT+430] == 0xF34D);
+            assert(storage[1+x*SPECTRUM_HEIGHT+SPECTRUM_HEIGHT-SPECTRUM_STRIP] != 0xF34D);
         }
         assert(storage[0] == 0x1234 && storage[pixels+1] == 0x1234);
     }
@@ -91,23 +104,46 @@ int main(void)
             for (unsigned bin = 0; bin < SPECTRUM_BINS; ++bin)
                 spectrum_magnitude[bin] = mode ? powf(10.0f, -48.0f / 20.0f) : 0.004f;
             spectrum_render(storage+1, mode != 0);
-            unsigned lit = 0;
-            for (unsigned row = 0; row < SPECTRUM_HEIGHT-SPECTRUM_STRIP; ++row)
-                if (storage[1+row] == bar_color(row)) ++lit;
+            unsigned lit = bar_height(storage+1);
             unsigned expected = endpoint ? 364U : 91U;
             assert(lit >= expected-1U && lit <= expected+1U);
             /* Even when the spectrum saturates, the slider's outer edge
              * remains its own background, not a spectrum column. */
-            assert(storage[1+(SPECTRUM_WIDTH-1U)*SPECTRUM_HEIGHT] == 0x10E5);
+            assert(storage[1+(SPECTRUM_WIDTH-1U)*SPECTRUM_HEIGHT] == 0x08A4);
             assert(storage[0] == 0x1234 && storage[pixels+1] == 0x1234);
         }
     }
     float previous_gain = spectrum_display_gain;
+    spectrum_touch_release();
     assert(spectrum_touch(0, 0, true));
     assert(!spectrum_touch(0, 0, false));
     assert(!spectrum_touch(SPECTRUM_WIDTH, SPECTRUM_HEIGHT, true));
     assert(spectrum_display_gain == previous_gain);
     spectrum_display_gain = 1.0f;
+    /* Sudden sound rises quickly, releases slowly, and leaves a fading marker
+     * that eventually disappears. Check this for both display scales. */
+    for (unsigned mode = 0; mode < 2; ++mode) {
+        spectrum_ui_reset();
+        memset(spectrum_magnitude, 0, sizeof(spectrum_magnitude));
+        spectrum_render(storage+1, mode != 0);
+        spectrum_magnitude[0] = mode ? 0.1f : 0.0075f;
+        spectrum_render(storage+1, mode != 0);
+        unsigned attack = bar_height(storage+1);
+        assert(attack > 260U && attack < 300U);
+        spectrum_magnitude[0] = 0;
+        spectrum_render(storage+1, mode != 0);
+        unsigned release = bar_height(storage+1);
+        assert(release < attack && release > 200U);
+        assert(storage[1+attack] != 0x0063); /* retained peak */
+        uint16_t bright = storage[1+attack];
+        spectrum_render(storage+1, mode != 0);
+        assert(storage[1+attack] != bright); /* fading */
+        for (unsigned frame = 0; frame < 60U; ++frame) spectrum_render(storage+1, mode != 0);
+        assert(bar_height(storage+1) == 0U);
+        for (unsigned row = 0; row < SPECTRUM_HEIGHT-SPECTRUM_STRIP; ++row)
+            assert(storage[1+row] == 0x0063);
+        assert(storage[0] == 0x1234 && storage[pixels+1] == 0x1234);
+    }
     free(storage);
     puts("Spectrum checks passed: silence, DC, tones, amplitude, Nyquist, scales, framebuffer bounds.");
 }
