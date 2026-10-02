@@ -1,8 +1,8 @@
 # Microphone spectrum for Alif DevKit-E8
 
-Live microphone spectrum on the standard 480 x 800 RGB565 LCD, rotated into landscape. Frequency spans all 800 pixels, from DC on the left to 24 kHz on the right. Magnitude occupies 456 of the 480 pixels; the remaining 24-pixel strip shows LINEAR or LOG and frequency labels (0, 6, 12, 18, 24 kHz). There are no magnitude axes or grid lines.
+Live microphone spectrum on the standard 480 x 800 RGB565 LCD, rotated into landscape. Frequency spans all 800 pixels, from DC on the left to 24 kHz on the right. Magnitude occupies 456 of the 480 pixels; the remaining 24-pixel strip shows LINEAR or LOG and frequency labels (0, 6, 12, 18, 24 kHz). Bars are green in the bottom 50% of the plotting area, orange from 50% to 80%, and red above 80%, in both magnitude modes. There are no magnitude axes or grid lines.
 
-Touch anywhere to switch between linear amplitude (0 to full scale) and logarithmic amplitude (-80 to 0 dBFS). Log is selected at startup. The scale is fixed rather than automatically normalized, preserving changes in sound level. A quiet interval of 150 ms rearms the touch toggle because the pack driver returns zero touches when it has no fresh touch report.
+Touch anywhere to switch between linear amplitude (100x display gain, full height at 1% of PCM full scale) and logarithmic amplitude (-80 to 0 dBFS). Log is selected at startup. The scale is fixed rather than automatically normalized, preserving changes in sound level. Linear gain affects only the display; bar heights saturate at the plotting boundary so they cannot overwrite the indicator strip or leave the framebuffer. A quiet interval of 150 ms rearms the touch toggle because the pack driver returns zero touches when it has no fresh touch report.
 
 ## Signal processing
 

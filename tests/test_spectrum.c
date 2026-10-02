@@ -5,6 +5,13 @@
 #include <stdlib.h>
 #include <string.h>
 static int16_t pcm[SPECTRUM_FFT_SIZE];
+static uint16_t bar_color(unsigned from_bottom)
+{
+    const unsigned plot_height = SPECTRUM_HEIGHT - SPECTRUM_STRIP;
+    if (from_bottom < plot_height / 2U) return 0x268A; /* green */
+    if (from_bottom < plot_height * 4U / 5U) return 0xFD00; /* orange */
+    return 0xF186; /* red */
+}
 static unsigned peak(void)
 {
     unsigned p = 1;
@@ -38,12 +45,13 @@ int main(void)
     storage[0] = storage[pixels+1] = 0x1234;
     for (unsigned mode = 0; mode < 2; ++mode) {
         memset(spectrum_magnitude, 0, sizeof(spectrum_magnitude));
-        spectrum_magnitude[512] = 0.1f;
+        spectrum_magnitude[512] = mode ? 0.1f : 0.001f;
         spectrum_render(storage+1, mode != 0);
         unsigned column = (513 * SPECTRUM_WIDTH + SPECTRUM_BINS - 1) / SPECTRUM_BINS - 1;
         unsigned lit = 0;
         for (unsigned y = SPECTRUM_STRIP; y < SPECTRUM_HEIGHT; ++y)
-            if (storage[1+column*SPECTRUM_HEIGHT+SPECTRUM_HEIGHT-1-y] == 0x15FB) ++lit;
+            if (storage[1+column*SPECTRUM_HEIGHT+SPECTRUM_HEIGHT-1-y] ==
+                bar_color(SPECTRUM_HEIGHT-1-y)) ++lit;
         assert(lit >= (mode ? 341U : 45U) && lit <= (mode ? 343U : 46U));
         assert(storage[0] == 0x1234 && storage[pixels+1] == 0x1234);
         FILE *f = fopen(mode ? "out/spectrum-log.ppm" : "out/spectrum-linear.ppm", "wb");
@@ -57,6 +65,20 @@ int main(void)
                 fwrite(rgb, 1, 3, f);
             }
         fclose(f);
+    }
+    /* Loud input must saturate every column at the plot boundary, including
+     * the first and last columns, without touching the indicator strip. */
+    for (unsigned mode = 0; mode < 2; ++mode) {
+        for (unsigned bin = 0; bin < SPECTRUM_BINS; ++bin)
+            spectrum_magnitude[bin] = 10.0f;
+        spectrum_render(storage + 1, mode != 0);
+        for (unsigned x = 0; x < SPECTRUM_WIDTH; ++x) {
+            for (unsigned y = SPECTRUM_STRIP; y < SPECTRUM_HEIGHT; ++y)
+                assert(storage[1+x*SPECTRUM_HEIGHT+SPECTRUM_HEIGHT-1-y] ==
+                       bar_color(SPECTRUM_HEIGHT-1-y));
+            assert(storage[1+x*SPECTRUM_HEIGHT+SPECTRUM_HEIGHT-SPECTRUM_STRIP] != 0xF186);
+        }
+        assert(storage[0] == 0x1234 && storage[pixels+1] == 0x1234);
     }
     free(storage);
     puts("Spectrum checks passed: silence, DC, tones, amplitude, Nyquist, scales, framebuffer bounds.");

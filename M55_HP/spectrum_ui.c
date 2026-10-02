@@ -47,6 +47,8 @@ static void label(uint16_t *fb, unsigned x, const char *s)
 void spectrum_render(uint16_t *fb, bool logarithmic)
 {
     const unsigned plot_height = SPECTRUM_HEIGHT - SPECTRUM_STRIP;
+    const unsigned green_limit = plot_height / 2U;
+    const unsigned orange_limit = plot_height * 4U / 5U;
     for (unsigned x = 0; x < SPECTRUM_WIDTH; ++x) {
         /* Peak pooling retains narrow tones when 1025 bins map to 800 pixels. */
         unsigned first = x * SPECTRUM_BINS / SPECTRUM_WIDTH;
@@ -54,13 +56,20 @@ void spectrum_render(uint16_t *fb, bool logarithmic)
         float a = 0.0f;
         for (unsigned bin = first; bin < end; ++bin)
             if (spectrum_magnitude[bin] > a) a = spectrum_magnitude[bin];
-        float level = logarithmic ? (20.0f * log10f(fmaxf(a, 0.0001f)) + 80.0f) / 80.0f : a;
+        /* Display-only gain makes quiet microphone signals visible in linear
+         * mode. Clip before converting to a height or filling the buffer. */
+        float level = logarithmic ? (20.0f * log10f(fmaxf(a, 0.0001f)) + 80.0f) / 80.0f
+                                  : a * SPECTRUM_LINEAR_GAIN;
         level = fminf(1.0f, fmaxf(0.0f, level));
         unsigned height = (unsigned)(level * (float)plot_height);
         /* In portrait memory, each landscape column is contiguous. Use
          * optimized DSP fills so Debug's unoptimized UI stays within 50 ms. */
         q15_t *column = (q15_t *)(fb + x * SPECTRUM_HEIGHT);
-        arm_fill_q15((q15_t)RGB(20,190,220), column, height);
+        unsigned green_end = height < green_limit ? height : green_limit;
+        unsigned orange_end = height < orange_limit ? height : orange_limit;
+        arm_fill_q15((q15_t)RGB(32,210,80), column, green_end);
+        arm_fill_q15((q15_t)RGB(255,160,0), column + green_end, orange_end - green_end);
+        arm_fill_q15((q15_t)RGB(240,48,48), column + orange_end, height - orange_end);
         arm_fill_q15((q15_t)RGB(3,7,15), column + height, plot_height - height);
         arm_fill_q15((q15_t)RGB(20,30,47), column + plot_height, SPECTRUM_STRIP);
     }

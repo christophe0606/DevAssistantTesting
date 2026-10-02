@@ -8,6 +8,7 @@
 #define SPECTRUM_WIDTH 800U
 #define SPECTRUM_HEIGHT 480U
 #define SPECTRUM_STRIP 24U
+#define SPECTRUM_LINEAR_GAIN 100.0f
 int spectrum_init(void);
 void spectrum_compute(const int16_t *pcm);
 void spectrum_render(uint16_t *framebuffer, bool logarithmic);
