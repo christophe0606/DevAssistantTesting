@@ -1,28 +1,31 @@
 /* Copyright (C) 2023 Alif Semiconductor - All Rights Reserved.
  * Use, distribution and modification permitted under the Alif Semiconductor
  * Software License Agreement: https://alifsemi.com/license
- * Joystick Pac-Man for the DevKit-E8 standard MIPI LCD.
+ * Microphone spectrum for the DevKit-E8 standard MIPI LCD.
  */
-#include "pacman.h"
+#include "spectrum.h"
+#include <string.h>
 #include <stdint.h>
 #include <RTE_Components.h>
 #include CMSIS_device_header
 #include "RTE_Device.h"
 #include "Driver_CDC200.h"
 #include "Driver_IO.h"
+#include "Driver_PDM.h"
+#include "Driver_Touch_Screen.h"
 #include "pinconf.h"
 #include "board_config.h"
 #include "se_services_port.h"
 
 #define LCD_WIDTH       RTE_PANEL_HACTIVE_TIME
 #define LCD_HEIGHT      RTE_PANEL_VACTIVE_LINE
-#define FRAME_MS 33U
+#define FRAME_MS 50U
 
 #if RTE_CDC200_PIXEL_FORMAT != 2
 #error "This renderer requires RGB565 (RTE_CDC200_PIXEL_FORMAT = 2)"
 #endif
-_Static_assert(LCD_WIDTH == GAME_LCD_WIDTH && LCD_HEIGHT == GAME_LCD_HEIGHT,
-               "Pac-Man UI requires the standard 480 x 800 LCD");
+_Static_assert(LCD_WIDTH == SPECTRUM_HEIGHT && LCD_HEIGHT == SPECTRUM_WIDTH,
+               "Spectrum UI requires the standard 480 x 800 LCD");
 
 /* Bulk SRAM is accessible to CDC DMA; DTCM holds normal data and stack. */
 static uint16_t framebuffers[2][LCD_HEIGHT][LCD_WIDTH]
@@ -80,47 +83,147 @@ static void clean_frame(uint32_t index)
     __DSB();
 }
 
-/* E8 mapping from the pack's vio_DevKit-E8.c: A=left, D=right,
- * B=up, C=down. All switches are active low on GPIO15. */
-extern ARM_DRIVER_GPIO Driver_GPIO15;
-static const uint8_t joystick_pins[5] = {
-    BOARD_JOY_SW_A_GPIO_PIN, BOARD_JOY_SW_D_GPIO_PIN,
-    BOARD_JOY_SW_B_GPIO_PIN, BOARD_JOY_SW_C_GPIO_PIN,
-    BOARD_JOY_SW_CENTER_GPIO_PIN
-};
-Pacman game;
-volatile uint32_t joystick_raw;
-volatile uint32_t joystick_keys;
-static uint32_t input_at, candidate_at, candidate_keys;
+extern ARM_DRIVER_PDM Driver_PDM;
+extern ARM_DRIVER_TOUCH_SCREEN GT911;
+#define AUDIO_CHUNK 512U
+#define AUDIO_SLOTS 8U
+#define AUDIO_CHANNELS 1U
+#define MICROPHONE_GAIN_Q8_4 0xF00U /* Alif AudioBackend.cpp: fixed 240x gain. */
+/* Interrupt-driven PDM writes CPU-local memory, so no DMA cache coherency
+ * operation is needed. The callback rearms capture before returning. */
+static int16_t audio[AUDIO_SLOTS][AUDIO_CHUNK * AUDIO_CHANNELS];
+static int16_t history[AUDIO_CHANNELS][SPECTRUM_FFT_SIZE];
+static volatile uint32_t audio_produced;
+static uint32_t audio_consumed, history_samples, audio_at;
+static volatile int32_t audio_error;
+static volatile bool audio_armed;
+static volatile bool audio_restart;
+volatile uint32_t audio_overflows;
+volatile uint32_t audio_dropped_blocks;
+volatile uint32_t logarithmic = 1U;
+volatile uint32_t frame_compute_ms, frame_period_ms, deadline_misses;
+volatile uint32_t microphone_range[AUDIO_CHANNELS], microphone_channel = 4U;
+static uint32_t touch_at, last_contact;
+static bool touch_held;
 
-static void joystick_init(void)
+static void touchscreen_init(void)
 {
-    for (unsigned i = 0; i < 5; ++i) {
-        uint8_t pin = joystick_pins[i];
-        check_driver(pinconf_set(PORT_15, pin, PINMUX_ALTERNATE_FUNCTION_0,
-            PADCTRL_READ_ENABLE | PADCTRL_SCHMITT_TRIGGER_ENABLE |
-            PADCTRL_DRIVER_DISABLED_PULL_UP | PADCTRL_OUTPUT_DRIVE_STRENGTH_4MA));
-        check_driver(Driver_GPIO15.Initialize(pin, NULL));
-        check_driver(Driver_GPIO15.PowerControl(pin, ARM_POWER_FULL));
-        check_driver(Driver_GPIO15.SetDirection(pin, GPIO_PIN_DIRECTION_INPUT));
+    /* The peripheral drivers do not configure their board pin multiplexers.
+     * These are the DevKit-E8 selections in the generated pins.h. */
+    const uint32_t i2c_pad = PADCTRL_READ_ENABLE | PADCTRL_DRIVER_DISABLED_PULL_UP |
+                             PADCTRL_OUTPUT_DRIVE_STRENGTH_12MA;
+    check_driver(pinconf_set(PORT_7, PIN_2, PINMUX_ALTERNATE_FUNCTION_5, i2c_pad));
+    check_driver(pinconf_set(PORT_7, PIN_3, PINMUX_ALTERNATE_FUNCTION_5, i2c_pad));
+    check_driver(pinconf_set(PORT_(BOARD_TOUCH_RESET_GPIO_PORT), BOARD_TOUCH_RESET_GPIO_PIN,
+                             PINMUX_ALTERNATE_FUNCTION_0, PADCTRL_OUTPUT_DRIVE_STRENGTH_4MA));
+    check_driver(pinconf_set(PORT_(BOARD_TOUCH_INT_GPIO_PORT), BOARD_TOUCH_INT_GPIO_PIN,
+                             PINMUX_ALTERNATE_FUNCTION_0,
+                             PADCTRL_READ_ENABLE | PADCTRL_OUTPUT_DRIVE_STRENGTH_4MA));
+    check_driver(GT911.Initialize());
+    check_driver(GT911.PowerControl(ARM_POWER_FULL));
+}
+
+static void audio_callback(uint32_t events)
+{
+    /* A core reload can leave peripheral IRQs from the previous program.
+     * PowerControl enables the NVIC before resetting the FIFO. Never rearm
+     * a stale completion while the driver is still being configured. */
+    if (!audio_armed) return;
+    if (events & ARM_PDM_EVENT_ERROR) {
+        ++audio_overflows;
+        audio_restart = true;
+        audio_armed = false;
+        return;
     }
+    if (events & ARM_PDM_EVENT_CAPTURE_COMPLETE) {
+        __DMB();
+        ++audio_produced;
+        int32_t status = Driver_PDM.Receive(audio[audio_produced % AUDIO_SLOTS], AUDIO_CHUNK * AUDIO_CHANNELS);
+        if (status != ARM_DRIVER_OK) audio_error = status;
+    }
+}
+
+static void microphone_init(void)
+{
+    check_driver(pinconf_set(PORT_(BOARD_PDM_D2_B_GPIO_PORT), BOARD_PDM_D2_B_GPIO_PIN,
+                             PINMUX_ALTERNATE_FUNCTION_3,
+                             PADCTRL_READ_ENABLE | PADCTRL_DRIVER_DISABLED_PULL_UP |
+                             PADCTRL_OUTPUT_DRIVE_STRENGTH_4MA));
+    check_driver(pinconf_set(PORT_(BOARD_PDM_C2_A_GPIO_PORT), BOARD_PDM_C2_A_GPIO_PIN,
+                             PINMUX_ALTERNATE_FUNCTION_3, PADCTRL_OUTPUT_DRIVE_STRENGTH_4MA));
+    check_driver(Driver_PDM.Initialize(audio_callback));
+    check_driver(Driver_PDM.PowerControl(ARM_POWER_FULL));
+    check_driver(Driver_PDM.Control(ARM_PDM_MODE, ARM_PDM_MODE_MICROPHONE_SLEEP, 0));
+    /* Filter from the pack's bare-metal PDM example.
+     * Keep the hardware FIR decimator and DC-blocking IIR enabled. */
+    PDM_CH_CONFIG config = { .ch_num = 4, .ch_fir_coef = {
+        0x001,0x003,0x003,0x7F4,0x004,0x7ED,0x7F5,0x7F4,0x7D3,
+        0x7FE,0x7BC,0x7E5,0x7D9,0x793,0x029,0x72C,0x072,0x2FD
+    }, .ch_iir_coef = 9 };
+    check_driver(Driver_PDM.Config(&config));
+    check_driver(Driver_PDM.Control(ARM_PDM_CHANNEL_PHASE, 4, 0x1F));
+    check_driver(Driver_PDM.Control(ARM_PDM_CHANNEL_GAIN, 4, MICROPHONE_GAIN_Q8_4));
+    check_driver(Driver_PDM.Control(ARM_PDM_BYPASS_FIR_FILTER, 0, 0));
+    check_driver(Driver_PDM.Control(ARM_PDM_BYPASS_IIR_FILTER, 0, 0));
+    audio_at = ms_ticks;
+    check_driver(Driver_PDM.Control(ARM_PDM_SELECT_CHANNEL,
+                 ARM_PDM_MASK_CHANNEL_4, 0));
+    check_driver(Driver_PDM.Control(ARM_PDM_MODE, ARM_PDM_MODE_AUDIOFREQ_48K_DECM_64, 0));
+    check_driver(Driver_PDM.Receive(audio[0], AUDIO_CHUNK * AUDIO_CHANNELS));
+    audio_armed = true;
 }
 
 static void service_input(void)
 {
-    uint32_t now = ms_ticks;
-    if (now - input_at < 5U) return;
-    input_at = now;
-    uint32_t raw = 0;
-    for (unsigned i = 0; i < 5; ++i) {
-        uint32_t value;
-        check_driver(Driver_GPIO15.GetValue(joystick_pins[i], &value));
-        if (value == 0U) raw |= 1U << i;
+    if (audio_restart) {
+        /* PDM continues while the core is halted. Reset its FIFO and discard
+         * the incomplete window before accepting samples after an overflow. */
+        audio_armed = false;
+        check_driver(Driver_PDM.PowerControl(ARM_POWER_OFF));
+        audio_produced = audio_consumed = history_samples = 0;
+        audio_restart = false;
+        microphone_init();
     }
-    joystick_raw = raw;
-    if (raw != candidate_keys) { candidate_keys = raw; candidate_at = now; }
-    if (now - candidate_at >= 20U) joystick_keys = candidate_keys;
-    pacman_update(&game, now, joystick_keys);
+    if (audio_error != ARM_DRIVER_OK) fail(audio_error);
+    uint32_t available = audio_produced;
+    __DMB();
+    /* Reserve the slot currently being written. Recover visibly counted
+     * overruns without ever transforming a partially captured block. */
+    if ((uint32_t)(available - audio_consumed) >= AUDIO_SLOTS) {
+        audio_dropped_blocks += available - audio_consumed - (AUDIO_SLOTS - 1U);
+        audio_consumed = available - (AUDIO_SLOTS - 1U);
+        history_samples = 0;
+    }
+    while (audio_consumed != available) {
+        for (unsigned ch = 0; ch < AUDIO_CHANNELS; ++ch) {
+            memmove(history[ch], history[ch] + AUDIO_CHUNK,
+                    sizeof(history[ch]) - AUDIO_CHUNK * sizeof(int16_t));
+            for (unsigned i = 0; i < AUDIO_CHUNK; ++i)
+                history[ch][SPECTRUM_FFT_SIZE - AUDIO_CHUNK + i] =
+                    audio[audio_consumed % AUDIO_SLOTS][i * AUDIO_CHANNELS + ch];
+        }
+        __DMB();
+        if ((uint32_t)(audio_produced - audio_consumed) >= AUDIO_SLOTS) {
+            history_samples = 0;
+            return; /* Retry from a safe slot on the next service. */
+        }
+        ++audio_consumed;
+        if (history_samples < SPECTRUM_FFT_SIZE) history_samples += AUDIO_CHUNK;
+        audio_at = ms_ticks;
+    }
+    uint32_t now = ms_ticks;
+    if (now - audio_at > 250U) fail(ARM_DRIVER_ERROR_TIMEOUT);
+    if (now - touch_at < 10U) return;
+    touch_at = now;
+    ARM_TOUCH_STATE state = {0};
+    check_driver(GT911.GetState(&state));
+    /* GetState reports zero when no fresh interrupt is pending, including
+     * during a held finger. Require a quiet interval before another toggle. */
+    if (state.numtouches > 0) {
+        if (!touch_held) logarithmic ^= 1U;
+        touch_held = true;
+        last_contact = now;
+    } else if (now - last_contact >= 150U) touch_held = false;
 }
 static void present(uint32_t index)
 {
@@ -173,10 +276,9 @@ int main(void)
     check_service(status, service_error);
 
     app_stage = 3U;
-    joystick_init();
-    pacman_init(&game, ms_ticks);
+    if (spectrum_init() != 0) fail(ARM_DRIVER_ERROR);
     for (uint32_t i = 0; i < 2U; ++i) {
-        pacman_render(&framebuffers[i][0][0], &game);
+        spectrum_render(&framebuffers[i][0][0], logarithmic != 0U);
         clean_frame(i);
     }
     app_stage = 4U;
@@ -190,22 +292,52 @@ int main(void)
     app_stage = 7U;
     check_driver(Driver_CDC200.Start());
 
+    touchscreen_init();
+    status = SERVICES_clocks_enable_clock(se_services_s_handle, CLKEN_HFOSCx2,
+                                         true, &service_error);
+    check_service(status, service_error);
+    microphone_init();
+
     app_stage = 8U;
     uint32_t back = 1U;
 
+    uint32_t next_frame = ms_ticks;
+    uint32_t previous_frame = ms_ticks;
     for (;;) {
+        while ((int32_t)(ms_ticks - next_frame) < 0) {
+            service_input();
+            __WFI();
+        }
         const uint32_t frame_start = ms_ticks;
+        frame_period_ms = frame_start - previous_frame;
+        previous_frame = frame_start;
         if (display_events != 0U) {
             fail(ARM_DRIVER_ERROR);
         }
         service_input();
-        pacman_render(&framebuffers[back][0][0], &game);
+        if (history_samples == SPECTRUM_FFT_SIZE) {
+            /* The onboard microphone drives channel 4. Channel 5 is the
+             * opposite clock edge, whose noise can exceed the signal's range. */
+            for (unsigned ch = 0; ch < AUDIO_CHANNELS; ++ch) {
+                int32_t low = 32767, high = -32768;
+                for (unsigned i = 0; i < SPECTRUM_FFT_SIZE; ++i) {
+                    int32_t sample = history[ch][i];
+                    if (sample < low) low = sample;
+                    if (sample > high) high = sample;
+                }
+                microphone_range[ch] = (uint32_t)(high - low);
+            }
+            spectrum_compute(history[0]);
+        }
+        spectrum_render(&framebuffers[back][0][0], logarithmic != 0U);
         clean_frame(back);
+        frame_compute_ms = ms_ticks - frame_start;
         present(back);
         back ^= 1U;
-        while ((uint32_t)(ms_ticks - frame_start) < FRAME_MS) {
-            service_input();
-            __WFI();
+        next_frame += FRAME_MS;
+        if ((int32_t)(ms_ticks - next_frame) > 0) {
+            ++deadline_misses;
+            next_frame = ms_ticks;
         }
     }
 }

@@ -14,6 +14,7 @@ solution:
     - pack: AlifSemiconductor::Ensemble@^2.2.0-0
     - pack: ARM::CMSIS@^6.2.0
     - pack: ARM::CMSIS-Compiler@^2.1.0
+    - pack: ARM::CMSIS-DSP@1.18.0
 
   # List different hardware targets that are used to deploy the solution.
   target-types:

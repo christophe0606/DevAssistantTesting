@@ -1,36 +1,27 @@
-# Pac-Man for Alif DevKit-E8
+# Microphone spectrum for Alif DevKit-E8
 
-A joystick-controlled Pac-Man-style maze game for the standard 480 x 800 LCD on the Cortex-M55 HP. This branch replaces the previous Tetris application with an original maze and code-drawn sprites.
+Live microphone spectrum on the standard 480 x 800 RGB565 LCD, rotated into landscape. Frequency spans all 800 pixels, from DC on the left to 24 kHz on the right. Magnitude occupies 456 of the 480 pixels; the remaining 24-pixel strip shows LINEAR or LOG and frequency labels (0, 6, 12, 18, 24 kHz). There are no magnitude axes or grid lines.
 
-## Controls
+Touch anywhere to switch between linear amplitude (0 to full scale) and logarithmic amplitude (-80 to 0 dBFS). Log is selected at startup. The scale is fixed rather than automatically normalized, preserving changes in sound level. A quiet interval of 150 ms rearms the touch toggle because the pack driver returns zero touches when it has no fresh touch report.
 
-- Press center to start, pause, resume, or restart after game over.
-- Move the joystick left, right, up, or down to steer. Movement continues after release; requested turns are buffered until a legal intersection. Reversing direction is immediate.
-- Eat all pellets to advance to the next level. The side tunnel wraps around the maze.
-- Small pellets award 10 points; the four large power pellets award 50 points and make ghosts vulnerable for 6.5 seconds. Eating successive ghosts during one power period awards 200, 400, 800, then 1600 points.
-- You have three lives. Ghosts speed up over the first five levels. Best score survives restarts in RAM, but not power cycles.
+## Signal processing
 
-The four ghosts alternate between chasing and scattering. Red follows the player, pink and cyan aim ahead, and orange retreats when close. They choose routes through the maze using breadth-first distances; frightened ghosts choose random turns. Eaten ghosts return to the center with a short respawn delay. This is a compact adaptation, not an exact reproduction of the arcade rules.
+The onboard PDM microphone uses channel 4 on P5_4 data and P6_7 clock. Only the active microphone clock edge is captured; selecting between clock edges by peak-to-peak range incorrectly preferred noise on channel 5. The driver captures signed 16-bit PCM at 48 kHz with its hardware FIR decimation and DC-blocking IIR filters enabled. No further downsampling is used, so no additional software decimation filter is needed. The FIR coefficients follow the pack's channel-4 bare-metal example. Channel 4 uses phase delay 31 and fixed 240x hardware gain (0xF00 in unsigned 8.4 format), matching Alif SDK AudioBackend.cpp, with a DC-blocking coefficient selector of 9. This gain makes microphone sound visible; the original example gain yielded samples too small for the plot. There is no automatic amplitude normalization.
 
-## Build and run
+CMSIS-DSP 1.18.0 generates a Hann window with `arm_hanning_f32`. Each frame removes the mean, applies the window, computes a 2048-point real FFT using `arm_rfft_fast_init_2048_f32` and `arm_rfft_fast_f32`, and calculates window-gain-corrected single-sided magnitudes. DC and Nyquist are unpacked separately. Frequency resolution is 23.4375 Hz; each window covers 42.67 ms. Peak pooling maps 1025 bins onto 800 pixels without losing narrow tones. Bar lengths switch between linear and log magnitude; frequency remains linear.
 
-Open `Blinky.csolution.yml` in CMSIS Solution. Select **DevKit-E8@Release**, then **Build** and **Load and Run**. Release retains `-O3 -ffast-math`. The original solution name remains for compatibility.
+Eight capture slots of 512 mono samples decouple interrupt-driven audio from display work. Capture is rearmed in the completion callback. The foreground maintains the newest 2048 samples for the microphone and services capture while waiting for the LCD. Two RGB565 framebuffers in SRAM0 use cache cleaning and VSYNC swaps. Display deadlines occur every 50 ms (20 fps).
 
-## Implementation
+## Build
 
-- `M55_HP/pacman.c`: maze, movement, ghost routing, scoring, lives, levels, and controls.
-- `M55_HP/pacman.h`: hardware-independent state and API.
-- `M55_HP/pacman_ui.c`: RGB565 maze, animated sprites, HUD, and overlays.
-- `M55_HP/main.c`: existing LCD setup, GPIO joystick, debounce, cache cleaning, and VSYNC double buffering.
+Open `Blinky.csolution.yml` in CMSIS Solution and select DevKit-E8 (Debug) or DevKit-E8@Release. CMSIS-DSP sources compile with `-O3 -ffast-math` in both configurations. Debug leaves application code unoptimized with debug information. Release applies `-O3 -ffast-math` to the application as well. The solution name is retained for compatibility.
 
-The editable maze in `pacman.c` is 19 columns by 25 rows: `#` walls, `.` pellets, `o` power pellets, and spaces empty corridors. Keep spawn positions traversable and row 12 open at both edges for the wrap tunnel. The native connectivity check catches isolated corridors and pellets.
-
-Joystick GPIO15 pins are unchanged from the previously verified board setup: 0 left, 1 up, 2 down, 3 right, 4 center, active low with pull-ups. Inputs are sampled every 5 ms and debounced for 20 ms. Fixed 20 ms game ticks give smooth movement at three pixels per tick; rendering targets approximately 30 FPS. Two LCD framebuffers occupy 1,536,000 bytes in SRAM0.
+- `M55_HP/main.c`: board setup, PDM capture queue, touch control, display scheduling.
+- `M55_HP/spectrum.c`: CMSIS-DSP window, FFT and magnitude processing.
+- `M55_HP/spectrum_ui.c`: landscape renderer and scale indicator.
 
 ## Verification
 
-Run `./tests/run_tests.ps1` with native Clang installed. Checks cover maze connectivity, pellets, buffered turns, walls, tunnel wrapping, power and ghost eating, life loss, pause, restart, level advancement, timer rollover, 30,000 simulated input updates, and framebuffer bounds. Screenshots are emitted as `out/pacman-*.ppm`.
+Run `./tests/run_tests.ps1` with native Clang and CMSIS_PACK_ROOT set. These tests use actual CMSIS-DSP sources and check silence, DC rejection, low/high frequency tones, amplitude normalization, Nyquist handling, linear/log bar lengths and framebuffer bounds. Landscape previews are written to `out/spectrum-linear.ppm` and `out/spectrum-log.ppm`.
 
-The release build and host checks passed; ready and gameplay previews were visually inspected. Live Release inspection confirmed the ready screen render loop at app_stage 8, 1,128 presented frames, and zero application, service, or display errors. The debugger was detached with CMSIS Run left active. Physical play testing of this new game is still needed.
-
-For live inspection, `app_stage = 8` identifies the main loop; `app_error`, `app_service_error`, and `display_events` should be zero, and `frames_presented` should advance. `joystick_raw` and `joystick_keys` bits 0 through 4 represent left, right, up, down, center. `game` contains the maze and actors.
+Runtime state is available to the debugger: `app_stage` 8 identifies the main loop; `app_error`, `app_service_error`, `display_events` and `audio_error` should be zero. `frames_presented` and `audio_produced` advance. `frame_period_ms` should be 50; `frame_compute_ms` measures FFT, render and cache cleaning. `deadline_misses` and `audio_dropped_blocks` count scheduling and capture overruns. `microphone_range[0]` contains the peak-to-peak PCM range; `microphone_channel` identifies the displayed input; `spectrum_peak_hz` reports the strongest FFT bin frequency. Halting for debug disrupts audio and can cause FIFO overflow on resume. Capture resets the FIFO, discards the incomplete window and resumes automatically; `audio_overflows` counts these events. Use CMSIS Load and Run to leave the application running for physical checks; ending a halted debug session may leave the core halted.
